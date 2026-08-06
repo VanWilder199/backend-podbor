@@ -44,7 +44,7 @@ ext {
     awsSdkVersion = '1.12.773'
     jsoupVersion = '1.18.3'
     testcontainersVersion = '1.20.4'
-    jooqVersion = '3.19.16'
+    jooqVersion = '3.20.8'
 }
 
 dependencies {
@@ -124,7 +124,7 @@ jooq {
                         name = 'org.jooq.meta.postgres.PostgresDatabase'
                         inputSchema = 'public'
                         includes = '.*'
-                        excludes = 'flyway_schema_history'
+                        excludes = 'flyway_schema_history|admins'
                         forcedTypes {
                             forcedType {
                                 name = 'VARCHAR'
@@ -135,6 +135,9 @@ jooq {
                     target {
                         packageName = 'by.marketplace.jooq'
                         directory = 'build/generated-sources/jooq'
+                    }
+                    generate {
+                        keys = false
                     }
                 }
             }

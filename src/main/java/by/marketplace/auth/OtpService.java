@@ -1,17 +1,24 @@
 package by.marketplace.auth;
 
+import by.marketplace.auth.dto.AuthResponse;
 import by.marketplace.auth.dto.Channel;
+import by.marketplace.jooq.tables.records.OtpCodesRecord;
 import by.marketplace.notification.NotificationService;
+import by.marketplace.shared.exception.AppException;
+import by.marketplace.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.webauthn.api.AuthenticatorResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.OTP_CODES;
 
@@ -29,6 +36,7 @@ public class OtpService {
 
     private static final int OTP_TTL_MINUTES = 5;
     private static final int MAX_ATTEMPTS = 3;
+
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Transactional
@@ -51,11 +59,46 @@ public class OtpService {
 
 
     }
-//    id BIGSERIAL PRIMARY KEY,
-//    channel TEXT NOT NULL,
-//    destination TEXT NOT NULL,
-//    code_hash TEXT NOT NULL,
-//    attempts INT NOT NULL DEFAULT 0,
-//    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-//    consumed_at TIMESTAMP WITH TIME ZONE
+
+    @Transactional
+    public AuthResponse verifyOtp(Channel channel, String destination, String code) {
+        var record = dsl.select(OTP_CODES)
+                        .where(OTP_CODES.DESTINATION.eq(destination))
+                        .and(OTP_CODES.CONSUMED_AT.isNull())
+                        .and(OTP_CODES.EXPIRES_AT.gt(OffsetDateTime.now()))
+                        .limit(1)
+                        .forUpdate()
+                        .fetchOne();
+
+
+       if (record == null) {
+           throw new AppException(ErrorCode.OTP_EXPIRED);
+       }
+
+       OtpCodesRecord otp = record.into(OTP_CODES);
+
+       if (otp.getAttempts() >= MAX_ATTEMPTS) {
+           throw new AppException(ErrorCode.OTP_EXPIRED);
+       }
+
+       if (!passwordEncoder.matches(code, otp.getCodeHash())) {
+           dsl.update(OTP_CODES)
+                   .set(OTP_CODES.ATTEMPTS, otp.getAttempts() + 1)
+                   .where(OTP_CODES.ID.eq(otp.getId()))
+                   .execute();
+
+           throw new AppException(ErrorCode.OTP_INVALID);
+       }
+
+       dsl.update(OTP_CODES)
+               .set(OTP_CODES.CONSUMED_AT, OffsetDateTime.now())
+               .where(OTP_CODES.ID.eq(otp.getId()))
+               .execute();
+
+        UUID userId = userRepository.upsertByDestination(channel, destination);
+
+        return jwtService.issueTokens(userId,channel == Channel.EMAIL ? destination : null, "BUYER" );
+    }
+
+
 }

@@ -12,4 +12,8 @@ public record SendOtpRequest(
     String phoneNumber,
     @NotNull
     Channel channel
-) {}
+) {
+    public String destination() {
+        return  channel == Channel.SMS ? phoneNumber : email;
+    }
+}
