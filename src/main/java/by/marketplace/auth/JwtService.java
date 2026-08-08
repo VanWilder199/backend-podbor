@@ -80,18 +80,17 @@ public class JwtService {
     public AuthResponse rotateRefreshToken(String oldToken) {
         String hash = sha256(oldToken);
 
-         var record = dsl.select(REFRESH_TOKENS)
+         RefreshTokensRecord token = dsl.selectFrom(REFRESH_TOKENS)
                 .where(REFRESH_TOKENS.TOKEN_HASH.eq(hash))
                 .and(REFRESH_TOKENS.REVOKED_AT.isNull())
                 .and(REFRESH_TOKENS.EXPIRES_AT.gt(OffsetDateTime.now()))
                 .forUpdate()
                 .fetchOne();
 
-        if (record == null) {
+        if (token == null) {
             throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        RefreshTokensRecord token =  record.into(REFRESH_TOKENS);
 
 
         dsl.update(REFRESH_TOKENS)

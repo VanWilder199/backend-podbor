@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -27,7 +28,7 @@ public class OtpRateLimiter {
     private static final int WINDOW_SECONDS = 3600;
 
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void tryConsumer(Channel channel,String destination) {
         OffsetDateTime now = OffsetDateTime.now();
 

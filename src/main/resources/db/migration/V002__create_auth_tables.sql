@@ -1,7 +1,7 @@
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    phone TEXT NOT NULL UNIQUE,
-    email CITEXT NOT NULL UNIQUE,
+    phone TEXT UNIQUE,
+    email CITEXT UNIQUE,
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
     );
@@ -13,7 +13,9 @@ CREATE TABLE otp_codes (
     code_hash TEXT NOT NULL,
     attempts INT NOT NULL DEFAULT 0,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    consumed_at TIMESTAMP WITH TIME ZONE
+    consumed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+
 );
 
 CREATE TABLE otp_rate_limits (

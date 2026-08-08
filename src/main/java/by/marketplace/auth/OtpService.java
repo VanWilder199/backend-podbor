@@ -60,9 +60,13 @@ public class OtpService {
 
     }
 
-    @Transactional
+    // Из за реализации (блокировки forUpdate ) не получится делать инкремент  в другой транзакции с REQUIERS_NEW
+    // получим классический deadlock (Внешняя транзакция пытается сделать UPDATE (хотя она как бы выполнена)
+    // а внутренняя транзакция пытается сделать UPDATE тоже в новой транкзации
+    // Хотя 1ый forUpdate выполняется значительно раньше но лок снимется только после того как транзакция за комичена будет
+    @Transactional(noRollbackFor = AppException.class)
     public AuthResponse verifyOtp(Channel channel, String destination, String code) {
-        var record = dsl.select(OTP_CODES)
+        OtpCodesRecord otp = dsl.selectFrom(OTP_CODES)
                         .where(OTP_CODES.DESTINATION.eq(destination))
                         .and(OTP_CODES.CONSUMED_AT.isNull())
                         .and(OTP_CODES.EXPIRES_AT.gt(OffsetDateTime.now()))
@@ -71,14 +75,13 @@ public class OtpService {
                         .fetchOne();
 
 
-       if (record == null) {
+       if (otp == null) {
            throw new AppException(ErrorCode.OTP_EXPIRED);
        }
 
-       OtpCodesRecord otp = record.into(OTP_CODES);
 
        if (otp.getAttempts() >= MAX_ATTEMPTS) {
-           throw new AppException(ErrorCode.OTP_EXPIRED);
+           throw new AppException(ErrorCode.OTP_INVALID);
        }
 
        if (!passwordEncoder.matches(code, otp.getCodeHash())) {
