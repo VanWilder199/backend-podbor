@@ -9,11 +9,13 @@ public record SendOtpRequest(
     @Email
     String email,
     @Pattern(regexp="^\\+375\\d{9}$")
-    String phoneNumber,
-    @NotNull
-    Channel channel
+    String phoneNumber
 ) {
     public String destination() {
-        return  channel == Channel.SMS ? phoneNumber : email;
+        return phoneNumber != null ? phoneNumber : email;
+    }
+
+    public Channel channel() {
+        return  phoneNumber != null ? Channel.SMS : Channel.EMAIL;
     }
 }

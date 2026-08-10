@@ -10,7 +10,7 @@ CREATE TABLE otp_codes (
     id BIGSERIAL PRIMARY KEY,
     channel TEXT NOT NULL,
     destination TEXT NOT NULL,
-    code_hash TEXT NOT NULL,
+    code TEXT NOT NULL,
     attempts INT NOT NULL DEFAULT 0,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     consumed_at TIMESTAMP WITH TIME ZONE,
