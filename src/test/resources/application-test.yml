@@ -1,0 +1,6 @@
+# Тестовый профиль для @WebMvcTest — без БД
+spring:
+  flyway:
+    enabled: false
+  jooq:
+    enabled: false

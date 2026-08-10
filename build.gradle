@@ -1,0 +1,167 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.postgresql:postgresql:42.7.8'
+        classpath 'org.flywaydb:flyway-database-postgresql:10.20.1'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'nu.studer.jooq' version '9.0'
+    id 'org.flywaydb.flyway' version '10.20.1'
+}
+
+group = 'by.marketplace'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    flywayDriver {
+        extendsFrom implementation
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    jjwtVersion = '0.12.6'
+    bucket4jVersion = '8.10.1'
+    awsSdkVersion = '1.12.773'
+    jsoupVersion = '1.18.3'
+    testcontainersVersion = '1.20.4'
+    jooqVersion = '3.20.8'
+}
+
+dependencies {
+    // Web + Security + Validation
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Database + JOOQ
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation "org.jooq:jooq:${jooqVersion}"
+    implementation "org.jooq:jooq-codegen:${jooqVersion}"
+    implementation "org.jooq:jooq-meta:${jooqVersion}"
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'org.postgresql:postgresql'
+
+    flywayDriver 'org.postgresql:postgresql:42.7.8'
+
+    jooqGenerator "org.jooq:jooq:${jooqVersion}"
+    jooqGenerator "org.jooq:jooq-codegen:${jooqVersion}"
+    jooqGenerator "org.jooq:jooq-meta:${jooqVersion}"
+    jooqGenerator 'org.postgresql:postgresql'
+
+
+    // JWT RS256
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+    // Rate limiting (in-memory, state persisted in DB)
+    implementation "com.bucket4j:bucket4j-core:${bucket4jVersion}"
+
+    // S3 presigned URLs (hoster.by compatible)
+    implementation "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
+
+    // av.by HTML parser
+    implementation "org.jsoup:jsoup:${jsoupVersion}"
+
+    // Utilities
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation "org.testcontainers:postgresql:${testcontainersVersion}"
+    testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
+}
+
+def jvmTmpDir = layout.buildDirectory.dir('tmp/jvm')
+
+tasks.withType(JavaExec).configureEach {
+    doFirst {
+        jvmTmpDir.get().asFile.mkdirs()
+    }
+    systemProperty 'java.io.tmpdir', jvmTmpDir.get().asFile.absolutePath
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    doFirst {
+        jvmTmpDir.get().asFile.mkdirs()
+    }
+    systemProperty 'java.io.tmpdir', jvmTmpDir.get().asFile.absolutePath
+    jvmArgs '-Djdk.attach.allowAttachSelf=true'
+}
+
+flyway {
+    locations = ['filesystem:src/main/resources/db/migration']
+    url = 'jdbc:postgresql://localhost:5432/marketplace'
+    user = 'marketplace'
+    password = 'marketplace'
+    driver = 'org.postgresql.Driver'
+    cleanDisabled = false
+}
+
+jooq {
+    version = jooqVersion
+
+    configurations {
+        main {
+            generationTool {
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5432/marketplace'
+                    user = 'marketplace'
+                    password = 'marketplace'
+                }
+                generator {
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        includes = '.*'
+                        excludes = 'flyway_schema_history|admins'
+                        forcedTypes {
+                            forcedType {
+                                name = 'VARCHAR'
+                                includeTypes = '(?i:citext)'
+                            }
+                        }
+                    }
+                    target {
+                        packageName = 'by.marketplace.jooq'
+                        directory = 'build/generated-sources/jooq'
+                    }
+                    generate {
+                        keys = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+tasks.named('generateJooq').configure {
+    dependsOn tasks.named('flywayMigrate')
+}

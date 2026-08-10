@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/marketplace
+    username: marketplace
+    password: marketplace
+
+jwt:
+  secret: "this-is-a-very-long-secret-key-for-testing-purposes-only-must-be-32-chars"
+  access-token-expiration: 15
+  refresh-token-expiration: 43200
+
+logging:
+  level:
+    by.marketplace: DEBUG
+    org.jooq.tools.LoggerListener: DEBUG
