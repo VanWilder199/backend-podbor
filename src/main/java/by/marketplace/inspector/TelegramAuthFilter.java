@@ -1,8 +1,6 @@
-package by.marketplace.auth;
+package by.marketplace.inspector;
 
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
+import by.marketplace.shared.exception.AppException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,16 +14,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class TelegramAuthFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
+    private static final String HEADER_NAME = "X-Telegram-Data";
 
-    private final JwtService jwtService;
+    private static final Logger log = LoggerFactory.getLogger(TelegramAuthFilter.class);
 
-    public JwtAuthFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
+    private final TelegramInitDataValidator validator;
+
+    public TelegramAuthFilter(TelegramInitDataValidator validator) {
+        this.validator = validator;
     }
 
     @Override
@@ -35,30 +34,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain chain
     ) throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        String initData = request.getHeader(HEADER_NAME);
 
-        if (header == null || !header.startsWith("Bearer ")) {
+        if (initData == null || initData.isBlank()) {
             chain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
-
         try {
-            Claims claims = jwtService.validateAccessToken(token);
-            UUID userId = UUID.fromString(claims.getSubject());
-            String role = claims.get("role", String.class);
+            TelegramUser user = validator.validate(initData);
 
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            user,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                            List.of(new SimpleGrantedAuthority("ROLE_INSPECTOR"))
                     );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
-        } catch (JwtException | IllegalArgumentException e) {
-            log.debug("Rejected access token: {}", e.getMessage());
+        } catch (AppException e) {
+            log.debug("Rejected X-Telegram-Data: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

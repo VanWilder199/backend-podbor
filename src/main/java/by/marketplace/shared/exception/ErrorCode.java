@@ -68,6 +68,26 @@ public enum ErrorCode {
             "NOT_FOUND",
             "Resource not found",
             HttpStatus.NOT_FOUND
+    ),
+    TELEGRAM_AUTH_INVALID(
+            "TELEGRAM_AUTH_INVALID",
+            "Invalid Telegram authentication",
+            HttpStatus.UNAUTHORIZED
+    ),
+    TELEGRAM_AUTH_EXPIRED(
+            "TELEGRAM_AUTH_EXPIRED",
+            "Telegram authentication has expired",
+            HttpStatus.UNAUTHORIZED
+    ),
+    INSPECTOR_NOT_FOUND(
+            "INSPECTOR_NOT_FOUND",
+            "Inspector not found",
+            HttpStatus.NOT_FOUND
+    ),
+    INSPECTOR_ALREADY_REGISTERED(
+            "INSPECTOR_ALREADY_REGISTERED",
+            "Inspector already registered",
+            HttpStatus.CONFLICT
     );
 
 
