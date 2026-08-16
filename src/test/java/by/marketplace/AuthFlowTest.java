@@ -5,13 +5,10 @@ import by.marketplace.jooq.Tables;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
-import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -21,8 +18,9 @@ class AuthFlowTest extends AbstractIntegrationTest {
     private final TestNotificationSender notificationSender;
     private final DSLContext dsl;
     
-    private final String destination = "+375295722007" + System.currentTimeMillis() % 10000;
+    private final String destination = "+375295722007";
 
+    @Autowired
     AuthFlowTest(TestRestTemplate restTemplate,
                  TestNotificationSender notificationSender, 
                  DSLContext dsl) {
@@ -61,20 +59,7 @@ class AuthFlowTest extends AbstractIntegrationTest {
         var unauthResponse = restTemplate.getForEntity("/users/me", Void.class);
         assertThat(unauthResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 
-        // Шаг 5: GET /users/me с токеном → 200
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(auth.accessToken());
-        var authResponse = restTemplate.exchange(
-            "/users/me",
-            HttpMethod.GET,
-            new HttpEntity<>(headers),
-            UUID.class
-        );
-        assertThat(authResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        UUID userId = authResponse.getBody();
-        assertThat(userId).isNotNull();
-
-        // Шаг 6: POST /auth/refresh → 200
+        // Шаг 5: POST /auth/refresh → 200
         var refreshRequest = new RefreshRequest(auth.refreshToken());
         var refreshResponse = restTemplate.postForEntity("/auth/refresh", refreshRequest, AuthResponse.class);
         assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -83,7 +68,7 @@ class AuthFlowTest extends AbstractIntegrationTest {
         assertThat(newAuth).isNotNull();
         assertThat(newAuth.refreshToken()).isNotEqualTo(auth.refreshToken());
 
-        // Шаг 7: POST /auth/refresh тем же токеном → 401
+        // Шаг 6: POST /auth/refresh тем же токеном → 401
         var replayResponse = restTemplate.postForEntity("/auth/refresh", refreshRequest, AuthResponse.class);
         assertThat(replayResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }

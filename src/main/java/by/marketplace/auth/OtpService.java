@@ -45,7 +45,7 @@ public class OtpService {
         Long otpId = dsl.insertInto(OTP_CODES)
                 .set(OTP_CODES.CHANNEL, channel.toString())
                 .set(OTP_CODES.DESTINATION, destination)
-                .set(OTP_CODES.CODE, code)
+                .set(OTP_CODES.CODE, passwordEncoder.encode(code))
                 .set(OTP_CODES.EXPIRES_AT, OffsetDateTime.now().plusMinutes(OTP_TTL_MINUTES))
                 .returning(OTP_CODES.ID)
                 .fetchOne()

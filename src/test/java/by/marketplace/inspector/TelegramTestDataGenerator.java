@@ -60,13 +60,13 @@ public class TelegramTestDataGenerator {
         System.out.println("  -d '{\"fullName\":\"Иванов Иванов\",\"phone\":\"+79991234567\",\"email\":\"ivan@test.com\"}'");
     }
 
-    private static byte[] hmacSha256(byte[] key, byte[] message) throws Exception {
+    public static byte[] hmacSha256(byte[] key, byte[] message) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(key, "HmacSHA256"));
         return mac.doFinal(message);
     }
 
-    private static String bytesToHex(byte[] bytes) {
+    public static String bytesToHex(byte[] bytes) {
         return HexFormat.of().formatHex(bytes);
     }
 }
