@@ -5,10 +5,11 @@ import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -20,16 +21,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @SpyBean
+    @MockitoBean
     private OtpService otpService;
 
-    @SpyBean
+    @MockitoBean
     private JwtService jwtService;
 
     @Test
@@ -86,13 +88,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void testRefreshToken_invalidToken_returns400() throws Exception {
+    void testRefreshToken_invalidToken_returns401() throws Exception {
         doThrow(new AppException(ErrorCode.INVALID_REFRESH_TOKEN))
             .when(jwtService).rotateRefreshToken(any());
 
         mockMvc.perform(post("/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"refreshToken\":\"invalid\"}"))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isUnauthorized());
     }
 }

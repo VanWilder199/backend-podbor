@@ -48,10 +48,12 @@ public class Inspector implements InspectorService {
                 .set(INSPECTORS.FULL_NAME, req.fullName())
                 .set(INSPECTORS.PHONE, req.phone())
                 .set(INSPECTORS.EMAIL, req.email())
+                .onConflict(INSPECTORS.TELEGRAM_USER_ID)
+                .doNothing()
                  .returning()
                 .fetchOptional();
 
 
-         return mapper.toDto(inspectorsRecord.orElseThrow());
+         return mapper.toDto(inspectorsRecord.orElseThrow(() -> new AppException(ErrorCode.INSPECTOR_ALREADY_REGISTERED)));
     }
 }
