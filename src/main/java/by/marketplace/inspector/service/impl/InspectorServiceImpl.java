@@ -17,18 +17,18 @@ import java.util.Optional;
 import static by.marketplace.jooq.Tables.INSPECTORS;
 
 @Service
-public class Inspector implements InspectorService {
+public class InspectorServiceImpl implements InspectorService {
     private final DSLContext dsl;
     private final InspectorMapper mapper;
 
-    public Inspector(DSLContext dsl, InspectorMapper mapper) {
+    public InspectorServiceImpl(DSLContext dsl, InspectorMapper mapper) {
         this.dsl = dsl;
         this.mapper = mapper;
     }
 
 
     @Override
-    public Optional<InspectorDto> findByTelegramId(long telegramUserId) {
+    public InspectorDto findByTelegramId(long telegramUserId) {
         InspectorsRecord  inspectorsRecord = dsl.selectFrom(INSPECTORS)
                 .where(INSPECTORS.TELEGRAM_USER_ID.eq(telegramUserId))
                 .limit(1)
@@ -37,7 +37,8 @@ public class Inspector implements InspectorService {
         if (inspectorsRecord == null) {
             throw new AppException(ErrorCode.INSPECTOR_NOT_FOUND);
         }
-        return Optional.of(inspectorsRecord).map(mapper::toDto);
+
+        return mapper.toDto(inspectorsRecord);
     }
 
     @Override

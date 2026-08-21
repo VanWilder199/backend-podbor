@@ -88,6 +88,21 @@ public enum ErrorCode {
             "INSPECTOR_ALREADY_REGISTERED",
             "Inspector already registered",
             HttpStatus.CONFLICT
+    ),
+    CAR_LISTING_NOT_FOUND(
+            "CAR_LISTING_NOT_FOUND",
+            "Car listing not found on av.by",
+            HttpStatus.NOT_FOUND
+    ),
+    PARSER_ERROR(
+            "PARSER_ERROR",
+            "Failed to parse car listing",
+            HttpStatus.BAD_GATEWAY
+    ),
+    CAR_NOT_FOUND(
+            "CAR_NOT_FOUND",
+            "Car not found",
+            HttpStatus.NOT_FOUND
     );
 
 
