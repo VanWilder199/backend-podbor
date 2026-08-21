@@ -1,15 +1,14 @@
 CREATE TABLE cars(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vin TEXT NOT NULL,
+    vin TEXT,
     avby_listing_url TEXT,
     make TEXT,
     model TEXT,
     year INT,
     listing_status TEXT NOT NULL DEFAULT 'active',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT cars_avby_listing_url_unique UNIQUE (avby_listing_url)
 );
-
-CREATE UNIQUE INDEX cars_avby_listing_url_idx ON cars (avby_listing_url) WHERE avby_listing_url IS NOT NULL;
 
 CREATE TABLE reports(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
