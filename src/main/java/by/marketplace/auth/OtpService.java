@@ -19,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.OTP_CODES;
+import static by.marketplace.jooq.Tables.USERS;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,6 @@ public class OtpService {
     private final OtpRateLimiter rateLimiter;
     private final PasswordEncoder passwordEncoder;
     private final NotificationSender notificationService;
-    private final UserRepository userRepository;
     private final JwtService jwtService;
 
     private static final int OTP_TTL_MINUTES = 5;
@@ -45,7 +45,7 @@ public class OtpService {
         Long otpId = dsl.insertInto(OTP_CODES)
                 .set(OTP_CODES.CHANNEL, channel.toString())
                 .set(OTP_CODES.DESTINATION, destination)
-                .set(OTP_CODES.CODE, code)
+                .set(OTP_CODES.CODE, passwordEncoder.encode(code))
                 .set(OTP_CODES.EXPIRES_AT, OffsetDateTime.now().plusMinutes(OTP_TTL_MINUTES))
                 .returning(OTP_CODES.ID)
                 .fetchOne()
@@ -88,8 +88,36 @@ public class OtpService {
                 .where(OTP_CODES.ID.eq(otp.getId()))
                 .execute();
 
-        UUID userId = userRepository.upsertByDestination(channel, destination);
+        UUID userId = upsertByDestination(channel, destination);
 
         return jwtService.issueTokens(userId, channel == Channel.EMAIL ? destination : null, "BUYER");
+    }
+
+    private UUID upsertByDestination(Channel channel, String destination) {
+        if (channel == Channel.SMS) {
+            return upsertBySms(destination);
+        }
+
+        return upsertByEmail(destination);
+    }
+
+    private UUID upsertBySms(String destination) {
+        return dsl.insertInto(USERS)
+                .set(USERS.PHONE, destination)
+                .onConflict(USERS.PHONE)
+                .doUpdate().set(USERS.PHONE, destination)
+                .returning(USERS.ID)
+                .fetchOne()
+                .getId();
+    }
+
+    private UUID upsertByEmail(String destination) {
+        return dsl.insertInto(USERS)
+                .set(USERS.EMAIL, destination)
+                .onConflict(USERS.EMAIL)
+                .doUpdate().set(USERS.EMAIL, destination)
+                .returning(USERS.ID)
+                .fetchOne()
+                .getId();
     }
 }

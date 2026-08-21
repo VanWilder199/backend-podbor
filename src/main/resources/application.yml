@@ -37,10 +37,10 @@ bepaid:
   secret-key: ${BEPAID_SECRET_KEY:}
   webhook-secret: ${BEPAID_WEBHOOK_SECRET:}
 
-telegram:
-  bot-token: ${TELEGRAM_BOT_TOKEN:}
-  bot-secret: ${TELEGRAM_BOT_SECRET:}
-
 sentry:
   dsn: ${SENTRY_DSN:}
   environment: ${SPRING_PROFILES_ACTIVE:local}
+
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  max-age: 24h

@@ -4,3 +4,6 @@ spring:
     enabled: false
   jooq:
     enabled: false
+
+telegram:
+  bot-token: test-token
