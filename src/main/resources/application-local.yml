@@ -17,3 +17,11 @@ logging:
 telegram:
   bot-token: "1234567890:AAFgH8K9L0mNpQrStUvWxYz"
   max-age: 24h
+
+s3:
+  endpoint: http://localhost:9000
+  bucket: test-bucket
+  access-key: test
+  secret-key: test
+  region: us-east-1
+  presigned-url-ttl-minutes: 60

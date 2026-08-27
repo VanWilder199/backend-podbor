@@ -103,6 +103,21 @@ public enum ErrorCode {
             "CAR_NOT_FOUND",
             "Car not found",
             HttpStatus.NOT_FOUND
+    ),
+    NOT_ALLOWDED_MEDIA_TYPE(
+            "NOT_ALLOWDED_MEDIA_TYPE",
+            "Not allowed media type",
+            HttpStatus.BAD_REQUEST
+    ),
+    MEDIA_NOT_FOUND(
+            "MEDIA_NOT_FOUND",
+            "Media not found",
+            HttpStatus.NOT_FOUND
+    ),
+    UNEXPECTED_ERROR(
+            "UNEXPECTED_ERROR",
+            "Unexpected error",
+            HttpStatus.INTERNAL_SERVER_ERROR
     );
 
 

@@ -41,7 +41,7 @@ repositories {
 ext {
     jjwtVersion = '0.12.6'
     bucket4jVersion = '8.10.1'
-    awsSdkVersion = '1.12.773'
+    awsSdkVersion = '2.25.30'
     jsoupVersion = '1.18.3'
     testcontainersVersion = '1.20.4'
     jooqVersion = '3.20.8'
@@ -78,7 +78,9 @@ dependencies {
     implementation "com.bucket4j:bucket4j-core:${bucket4jVersion}"
 
     // S3 presigned URLs (hoster.by compatible)
-    implementation "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
+    implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
+    implementation "software.amazon.awssdk:s3"
+
 
     // av.by HTML parser
     implementation "org.jsoup:jsoup:${jsoupVersion}"
@@ -93,6 +95,8 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation "org.testcontainers:postgresql:${testcontainersVersion}"
     testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
+    testImplementation("io.minio:minio:8.5.17")
+    testImplementation "org.testcontainers:minio:1.20.4"
 }
 
 def jvmTmpDir = layout.buildDirectory.dir('tmp/jvm')
