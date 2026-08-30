@@ -118,7 +118,38 @@ public enum ErrorCode {
             "UNEXPECTED_ERROR",
             "Unexpected error",
             HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    REPORT_NOT_FOUND(
+            "REPORT_NOT_FOUND",
+            "Report not found",
+            HttpStatus.NOT_FOUND
+    ),
+    SECTION_NOT_FOUND(
+            "SECTION_NOT_FOUND",
+            "Section not found",
+            HttpStatus.NOT_FOUND
+    ),
+    PANEL_NOT_FOUND(
+            "PANEL_NOT_FOUND",
+            "Panel not found",
+            HttpStatus.NOT_FOUND
+    ),
+    REPORT_ACCESS_DENIED(
+            "REPORT_ACCESS_DENIED",
+            "Access to report denied",
+            HttpStatus.FORBIDDEN
+    ),
+    REPORT_NOT_EDITABLE(
+            "REPORT_NOT_EDITABLE",
+            "Report is not editable",
+            HttpStatus.CONFLICT
+    ),
+    REPORT_INCOMPLETE(
+            "REPORT_INCOMPLETE",
+            "Report is not complete",
+            HttpStatus.CONFLICT
     );
+
 
 
     private final String code;
