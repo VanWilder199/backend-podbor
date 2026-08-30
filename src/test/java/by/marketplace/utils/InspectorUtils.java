@@ -9,6 +9,7 @@ import static by.marketplace.inspector.TelegramTestDataGenerator.hmacSha256;
 
 public class InspectorUtils {
     public static final long USER_ID = 123456789L;
+    public static final long SECOND_USER_ID = 132456789L;
     public static final String FIRST_NAME = "Test";
     public static final String USERNAME = "testuser";
 
@@ -19,8 +20,12 @@ public class InspectorUtils {
 
 
     public static String buildValidInitData(long authDate) throws Exception {
+        return buildValidInitData(authDate, USER_ID);
+    }
+
+    public static String buildValidInitData(long authDate, long userId) throws Exception {
         String userJson = objectMapper.writeValueAsString(
-                new TelegramUserPayload(USER_ID, FIRST_NAME, USERNAME)
+                new TelegramUserPayload(userId, FIRST_NAME, USERNAME)
         );
 
         String dataCheckString = "auth_date=" + authDate + "\nuser=" + userJson;

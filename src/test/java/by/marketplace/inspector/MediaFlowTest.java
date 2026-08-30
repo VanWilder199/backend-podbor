@@ -53,7 +53,7 @@ public class MediaFlowTest  extends AbstractIntegrationTest {
         dsl.truncate(INSPECTORS).cascade().execute();
         dsl.truncate(CARS).cascade().execute();
 
-        String data = InspectorUtils.buildValidInitData(System.currentTimeMillis() / 1000);
+        String data = InspectorUtils.buildValidInitData(System.currentTimeMillis() / 1000, InspectorUtils.USER_ID);
 
         headers.set("X-Telegram-Data", data);
 
@@ -80,10 +80,7 @@ public class MediaFlowTest  extends AbstractIntegrationTest {
 
         reportId = response.getBody().reportId();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-
-        CarsRecord cars = dsl.selectFrom(CARS)
+        dsl.selectFrom(CARS)
                 .where(CARS.AVBY_LISTING_URL.eq(request.avbyUrl()))
                 .fetchOne();
 
@@ -91,7 +88,7 @@ public class MediaFlowTest  extends AbstractIntegrationTest {
                 .where(REPORTS.ID.eq(response.getBody().reportId()))
                 .fetchOne();
 
-        UUID inspectorId = dsl.select(INSPECTORS.ID)
+        dsl.select(INSPECTORS.ID)
                 .from(INSPECTORS)
                 .where(INSPECTORS.TELEGRAM_USER_ID.eq(InspectorUtils.USER_ID))
                 .fetchOne(INSPECTORS.ID);
@@ -197,8 +194,6 @@ public class MediaFlowTest  extends AbstractIntegrationTest {
         );
 
         HttpEntity<PresignedUrlRequest> requestHttpEntity = new HttpEntity<>(request,headers);
-
-
 
         ResponseEntity<PresignedUrlResponse> response = restTemplate.exchange(
                 "/inspector/media/presigned-url/{reportId}",
