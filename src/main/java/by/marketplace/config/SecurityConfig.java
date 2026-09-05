@@ -2,7 +2,7 @@ package by.marketplace.config;
 
 
 import by.marketplace.auth.JwtAuthFilter;
-import by.marketplace.auth.JwtService;
+import by.marketplace.auth.service.JwtService;
 import by.marketplace.inspector.TelegramAuthFilter;
 import by.marketplace.inspector.TelegramInitDataValidator;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -38,6 +39,27 @@ public class SecurityConfig {
     }
 
     @Bean @Order(2)
+    public SecurityFilterChain adminChain(
+            HttpSecurity http,
+            JwtService jwtService,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler
+    ) throws Exception {
+        http.securityMatcher("/admin/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/auth/**").permitAll()
+                        .anyRequest().hasRole("ADMIN"))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
+                .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+
+    @Bean @Order(3)
     public SecurityFilterChain defaultChain(
             HttpSecurity http,
             JwtService jwtService,
@@ -47,10 +69,16 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, ex) -> response.sendError(HttpServletResponse.SC_FORBIDDEN);
     }
 
     @Bean

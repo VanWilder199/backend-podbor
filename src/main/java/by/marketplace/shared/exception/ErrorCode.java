@@ -148,6 +148,26 @@ public enum ErrorCode {
             "REPORT_INCOMPLETE",
             "Report is not complete",
             HttpStatus.CONFLICT
+    ),
+    ADMIN_INVALID_CREDENTIALS(
+            "ADMIN_INVALID_CREDENTIALS",
+            "Invalid admin credentials",
+            HttpStatus.UNAUTHORIZED
+    ),
+    ADMIN_TOTP_NOT_CONFIGURED(
+            "ADMIN_TOTP_NOT_CONFIGURED",
+            "Admin TOTP not configured",
+            HttpStatus.CONFLICT
+    ),
+    ADMIN_TOTP_ALREADY_CONFIGURED(
+            "ADMIN_TOTP_ALREADY_CONFIGURED",
+            "Admin TOTP already configured",
+            HttpStatus.CONFLICT
+    ),
+    ADMIN_TOTP_INVALID(
+            "ADMIN_TOTP_INVALID",
+            "Invalid admin TOTP code",
+            HttpStatus.UNAUTHORIZED
     );
 
 

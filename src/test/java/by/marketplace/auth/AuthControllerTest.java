@@ -1,6 +1,8 @@
 package by.marketplace.auth;
 
+import by.marketplace.auth.controller.AuthController;
 import by.marketplace.auth.dto.AuthResponse;
+import by.marketplace.auth.service.JwtService;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
