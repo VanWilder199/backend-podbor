@@ -2,6 +2,7 @@ package by.marketplace.auth;
 
 import by.marketplace.auth.dto.AuthResponse;
 import by.marketplace.auth.dto.Channel;
+import by.marketplace.auth.service.JwtService;
 import by.marketplace.jooq.tables.records.OtpCodesRecord;
 import by.marketplace.notification.NotificationSender;
 import by.marketplace.shared.exception.AppException;

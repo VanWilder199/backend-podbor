@@ -1,12 +1,12 @@
-package by.marketplace.auth;
+package by.marketplace.auth.service.impl;
 
 import by.marketplace.auth.dto.AuthResponse;
+import by.marketplace.auth.service.JwtService;
 import by.marketplace.config.JwtProperties;
 import by.marketplace.jooq.tables.records.RefreshTokensRecord;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import org.jooq.DSLContext;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -28,7 +28,7 @@ import static by.marketplace.jooq.Tables.*;
 
 
 @Service
-public class JwtService {
+public class JwtServiceImpl implements JwtService {
     private final SecretKey key;
     private final long accessExpiration;
     private final DSLContext dsl;
@@ -37,13 +37,19 @@ public class JwtService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
 
-    public JwtService(JwtProperties props, DSLContext dsl) {
+   @Override
+   public long getAccessTokenExpiration() {
+        return accessExpiration;
+    }
+
+    public JwtServiceImpl(JwtProperties props, DSLContext dsl) {
         this.key = props.getSecretKey();
         this.accessExpiration = props.getAccessTokenExpiration();
         this.dsl = dsl;
     }
 
 
+    @Override
     public AuthResponse issueTokens(UUID userId, String email, String role) {
         String access = generateAccessToken(userId, email, role);
         String refresh = refreshToken(userId);
@@ -51,19 +57,26 @@ public class JwtService {
         return new AuthResponse(access, refresh, OffsetDateTime.now().plusHours(refreshTokenExpiration).toEpochSecond());
     }
 
+    @Override
     public String generateAccessToken(UUID userId, String email, String role) {
+        return generateAccessToken(userId, email, role, accessExpiration);
+    }
+
+    @Override
+    public String generateAccessToken(UUID userId, String email, String role, long expirationMinutes) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
                 .claim("role", role)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + accessExpiration * 60_000))
+                .expiration(new Date(now.getTime() + expirationMinutes * 60_000))
                 .signWith(key)
                 .compact();
     }
 
 
+    @Override
     public String refreshToken(UUID userId) {
         String refreshToken = randomToken();
 
@@ -76,6 +89,7 @@ public class JwtService {
         return refreshToken;
     }
 
+    @Override
     @Transactional
     public AuthResponse rotateRefreshToken(String oldToken) {
         String hash = sha256(oldToken);
@@ -106,6 +120,7 @@ public class JwtService {
         return issueTokens(token.getUserId(), email, "BUYER");
     }
 
+    @Override
     public Claims validateAccessToken(String token) {
         return Jwts.parser()
                 .verifyWith(key)

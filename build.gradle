@@ -45,6 +45,7 @@ ext {
     jsoupVersion = '1.18.3'
     testcontainersVersion = '1.20.4'
     jooqVersion = '3.20.8'
+    samstevensVersion = '1.7.1'
 }
 
 dependencies {
@@ -80,6 +81,8 @@ dependencies {
     // S3 presigned URLs (hoster.by compatible)
     implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
     implementation "software.amazon.awssdk:s3"
+
+    implementation "dev.samstevens.totp:totp:${samstevensVersion}"
 
 
     // av.by HTML parser
@@ -144,7 +147,7 @@ jooq {
                         name = 'org.jooq.meta.postgres.PostgresDatabase'
                         inputSchema = 'public'
                         includes = '.*'
-                        excludes = 'flyway_schema_history|admins'
+                        excludes = 'flyway_schema_history'
                         forcedTypes {
                             forcedType {
                                 name = 'VARCHAR'

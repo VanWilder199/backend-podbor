@@ -1,10 +1,12 @@
 package by.marketplace.auth;
 
 import by.marketplace.auth.dto.AuthResponse;
+import by.marketplace.auth.service.impl.JwtServiceImpl;
 import by.marketplace.config.JwtProperties;
 import by.marketplace.jooq.tables.records.RefreshTokensRecord;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import io.jsonwebtoken.Claims;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.Result;
@@ -15,6 +17,7 @@ import org.jooq.tools.jdbc.MockDataProvider;
 import org.jooq.tools.jdbc.MockResult;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -27,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JwtServiceTest {
 
-    private JwtService buildService(MockDataProvider provider) {
+    private JwtServiceImpl buildService(MockDataProvider provider) {
         DSLContext dsl = DSL.using(new MockConnection(provider), SQLDialect.POSTGRES);
 
         JwtProperties props = new JwtProperties();
         props.setSecret("test-secret-key-must-be-at-least-32-bytes-long!!");
         props.setAccessTokenExpiration(15);
 
-        return new JwtService(props, dsl);
+        return new JwtServiceImpl(props, dsl);
     }
 
     @Test
@@ -51,7 +54,7 @@ class JwtServiceTest {
             throw new IllegalStateException("Unexpected SQL: " + ctx.sql());
         };
 
-        JwtService jwtService = buildService(provider);
+        JwtServiceImpl jwtService = buildService(provider);
 
         AppException ex = assertThrows(AppException.class,
                 () -> jwtService.rotateRefreshToken("nonexistent-token"));
@@ -100,12 +103,52 @@ class JwtServiceTest {
             throw new IllegalStateException("Unexpected SQL: " + ctx.sql());
         };
 
-        JwtService jwtService = buildService(provider);
+        JwtServiceImpl jwtService = buildService(provider);
 
         AuthResponse response = jwtService.rotateRefreshToken("valid-token");
 
         assertNotNull(response.accessToken());
         assertNotNull(response.refreshToken());
         assertNotEquals("valid-token", response.refreshToken());
+    }
+
+    @Test
+    void generateAccessToken_withExplicitExpiration_overridesDefaultAccessTokenExpiration() {
+        // props.accessTokenExpiration = 15 (buyer default) — админский вызов должен игнорировать
+        // это значение и жить ровно столько, сколько передано явным параметром (24 часа = 1440 минут).
+        JwtServiceImpl jwtService = buildService(ctx -> {
+            throw new IllegalStateException("Unexpected SQL: " + ctx.sql());
+        });
+        UUID adminId = UUID.randomUUID();
+
+        String token = jwtService.generateAccessToken(adminId, "admin@example.com", "ADMIN", 1440L);
+        Claims claims = jwtService.validateAccessToken(token);
+
+        long actualTtlMinutes = Duration.between(
+                claims.getIssuedAt().toInstant(),
+                claims.getExpiration().toInstant()
+        ).toMinutes();
+
+        assertEquals(1440L, actualTtlMinutes);
+    }
+
+    @Test
+    void generateAccessToken_withoutExplicitExpiration_stillUsesDefaultAccessTokenExpiration() {
+        // Контрольный кейс: buyer-флоу (3-аргументный метод) не должен был сломаться
+        // при добавлении 4-аргументной перегрузки.
+        JwtServiceImpl jwtService = buildService(ctx -> {
+            throw new IllegalStateException("Unexpected SQL: " + ctx.sql());
+        });
+        UUID userId = UUID.randomUUID();
+
+        String token = jwtService.generateAccessToken(userId, "buyer@example.com", "BUYER");
+        Claims claims = jwtService.validateAccessToken(token);
+
+        long actualTtlMinutes = Duration.between(
+                claims.getIssuedAt().toInstant(),
+                claims.getExpiration().toInstant()
+        ).toMinutes();
+
+        assertEquals(15L, actualTtlMinutes);
     }
 }

@@ -8,6 +8,9 @@ spring:
 telegram:
   bot-token: test-token
 
+jwt:
+  admin-access-token-expiration: 1440
+
 
 s3:
   endpoint:  http://localhost:9000

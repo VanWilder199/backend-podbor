@@ -1,6 +1,8 @@
-package by.marketplace.auth;
+package by.marketplace.auth.controller;
 
 
+import by.marketplace.auth.service.JwtService;
+import by.marketplace.auth.OtpService;
 import by.marketplace.auth.dto.AuthResponse;
 import by.marketplace.auth.dto.RefreshRequest;
 import by.marketplace.auth.dto.SendOtpRequest;
