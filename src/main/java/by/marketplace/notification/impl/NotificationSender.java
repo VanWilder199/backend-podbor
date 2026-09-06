@@ -36,4 +36,10 @@ public class NotificationSender implements by.marketplace.notification.Notificat
         logger.info(">>> Sending OTP to {} via {}: {}", destination, channel, code);
         // TODO: Интеграция с реальным SMS/Email провайдером
     }
+
+    @Override
+    public void notify(Channel channel, String destination, String message) {
+        logger.info(">>> Notifying {} via {}: {}", destination, channel, message);
+        // TODO: Интеграция с реальным SMS/Email провайдером
+    }
 }

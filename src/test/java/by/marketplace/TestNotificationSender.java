@@ -5,6 +5,9 @@ import by.marketplace.notification.NotificationSender;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Тестовая реализация NotificationSender.
  * Сохраняет последний отправленный код для проверки в тестах.
@@ -12,11 +15,16 @@ import org.springframework.stereotype.Component;
 @Component
 @Primary
 public class TestNotificationSender implements NotificationSender {
-    
+
     private String lastCode;
+    private final List<String> messages = new ArrayList<>();
 
     public String getLastCode() {
         return lastCode;
+    }
+
+    public List<String> getMessages() {
+        return messages;
     }
 
     @Override
@@ -27,5 +35,10 @@ public class TestNotificationSender implements NotificationSender {
     @Override
     public void sendOtpAsync(Long otpId, Channel channel, String destination, String code) {
         send(channel, destination, code);
+    }
+
+    @Override
+    public void notify(Channel channel, String destination, String message) {
+        messages.add(destination + ": " + message);
     }
 }

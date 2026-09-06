@@ -168,6 +168,21 @@ public enum ErrorCode {
             "ADMIN_TOTP_INVALID",
             "Invalid admin TOTP code",
             HttpStatus.UNAUTHORIZED
+    ),
+    REPORT_NOT_PENDING_REVIEW(
+            "REPORT_NOT_PENDING_REVIEW",
+            "Report is not pending review",
+            HttpStatus.CONFLICT
+    ),
+    REPORT_ALREADY_REVIEWED(
+            "REPORT_ALREADY_REVIEWED",
+            "Report is already reviewed",
+            HttpStatus.CONFLICT
+    ),
+    REPORT_ALREADY_DELETED(
+            "REPORT_ALREADY_DELETED",
+            "Report is already deleted",
+            HttpStatus.CONFLICT
     );
 
 
