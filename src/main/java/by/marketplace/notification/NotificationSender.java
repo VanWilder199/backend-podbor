@@ -17,4 +17,9 @@ public interface NotificationSender {
      * Асинхронная отправка OTP уведомления.
      */
     void sendOtpAsync(Long otpId, Channel channel, String destination, String code);
+
+    /**
+     * Отправить обычное текстовое сообщение (не OTP).
+     */
+    void notify(Channel channel, String destination, String message);
 }

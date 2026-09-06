@@ -16,4 +16,5 @@ public interface ReportService {
   void submitForModeration(UUID reportid, UUID inspectorId);
 
   ReportDto getReport(UUID reportId, UUID inspectorId);
+  ReportDto getReportForModeration(UUID reportId);
 }

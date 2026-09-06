@@ -195,9 +195,28 @@ public class ReportServiceImpl implements ReportService {
     public ReportDto getReport(UUID reportId, UUID inspectorId) {
         ReportsRecord report = requireOwnedReport(reportId, inspectorId);
 
+        return  buildReportDto(report);
+    }
+
+    @Override
+    public ReportDto getReportForModeration(UUID reportId) {
+        ReportsRecord report = dslContext.selectFrom(REPORTS)
+                .where(REPORTS.ID.eq(reportId))
+                .fetchOne();
+
+        if (report == null) {
+            throw new AppException(ErrorCode.REPORT_NOT_FOUND);
+        }
+
+        return buildReportDto(report);
+    }
+
+
+    private ReportDto buildReportDto(ReportsRecord report) {
+
         List<ReportSectionRecord> sections = dslContext
                 .selectFrom(REPORT_SECTION)
-                .where(REPORT_SECTION.REPORT_ID.eq(reportId))
+                .where(REPORT_SECTION.REPORT_ID.eq(report.getId()))
                 .orderBy(REPORT_SECTION.ORDER_NO)
                 .fetch();
 
@@ -209,27 +228,28 @@ public class ReportServiceImpl implements ReportService {
                 .fetch();
 
         List<ReportMediaRecord> media = dslContext.selectFrom(REPORT_MEDIA)
-                .where(REPORT_MEDIA.REPORT_ID.eq(reportId))
+                .where(REPORT_MEDIA.REPORT_ID.eq(report.getId()))
                 .fetch();
 
 
-         List<MeasurementWithPanel> measurements = dslContext
-                 .select(
-                         PAINT_MEASUREMENT.ID,
-                         PAINT_MEASUREMENT.PANEL_ID,
-                         PAINT_MEASUREMENT.SPOT,
-                         PAINT_MEASUREMENT.THICKNESS_UM,
-                         PAINT_MEASUREMENT.NOTE,
-                         PAINT_PANEL.CODE.as("panel_code"))
-                 .from(PAINT_MEASUREMENT)
-                 .join(PAINT_PANEL).on(PAINT_MEASUREMENT.PANEL_ID.eq(PAINT_PANEL.ID))
-                 .where(PAINT_MEASUREMENT.REPORT_ID.eq(reportId))
-                 .fetchInto(MeasurementWithPanel.class);
+        List<MeasurementWithPanel> measurements = dslContext
+                .select(
+                        PAINT_MEASUREMENT.ID,
+                        PAINT_MEASUREMENT.PANEL_ID,
+                        PAINT_MEASUREMENT.SPOT,
+                        PAINT_MEASUREMENT.THICKNESS_UM,
+                        PAINT_MEASUREMENT.NOTE,
+                        PAINT_PANEL.CODE.as("panel_code"))
+                .from(PAINT_MEASUREMENT)
+                .join(PAINT_PANEL).on(PAINT_MEASUREMENT.PANEL_ID.eq(PAINT_PANEL.ID))
+                .where(PAINT_MEASUREMENT.REPORT_ID.eq(report.getId()))
+                .fetchInto(MeasurementWithPanel.class);
 
         Map<UUID, List<ReportSectionItemRecord>> itemBySectionId = items.stream()
                 .collect(Collectors.groupingBy(ReportSectionItemRecord::getSectionId));
 
         Map<UUID, List<ReportMediaRecord>> mediaBySectionId = media.stream()
+                .filter(m -> m.getSectionId() != null)
                 .collect(Collectors.groupingBy(ReportMediaRecord::getSectionId, LinkedHashMap::new, Collectors.toList()));
 
         List<ReportMediaRecord> globalMediaRecords = media.stream()
@@ -275,13 +295,13 @@ public class ReportServiceImpl implements ReportService {
                 measurementDtos,
                 globalMediaDtos
         );
-
     }
 
 
     private ReportsRecord requireOwnedReport(UUID reportId, UUID inspectorId) {
         ReportsRecord report = dslContext.selectFrom(REPORTS)
                 .where(REPORTS.ID.eq(reportId))
+                .and(REPORTS.DELETED_AT.isNull())
                 .fetchOne();
 
         if (report == null) {
@@ -296,7 +316,7 @@ public class ReportServiceImpl implements ReportService {
     private ReportsRecord requireEditableReport(UUID reportId, UUID inspectorId) {
         ReportsRecord report = requireOwnedReport(reportId, inspectorId);
 
-        if (!"draft".equals(report.getStatus())) {
+        if (!Set.of("draft", "revision_required").contains(report.getStatus())) {
             throw new AppException(ErrorCode.REPORT_NOT_EDITABLE);
         }
 
