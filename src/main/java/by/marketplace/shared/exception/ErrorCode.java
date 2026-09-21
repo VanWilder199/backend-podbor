@@ -183,7 +183,37 @@ public enum ErrorCode {
             "REPORT_ALREADY_DELETED",
             "Report is already deleted",
             HttpStatus.CONFLICT
-    );
+    ),
+    REPORT_NOT_PUBLISHED(
+            "REPORT_NOT_PUBLISHED",
+            "Report is not published",
+            HttpStatus.CONFLICT
+    ),
+    PURCHASE_ALREADY_EXISTS(
+            "PURCHASE_ALREADY_EXISTS",
+            "Purchase already exists",
+            HttpStatus.CONFLICT
+    ),
+    PURCHASE_NOT_FOUND(
+            "PURCHASE_NOT_FOUND",
+            "Purchase not found",
+            HttpStatus.NOT_FOUND
+    ),
+    INVALID_WEBHOOK_SIGNATURE(
+            "INVALID_WEBHOOK_SIGNATURE",
+            "Invalid webhook signature",
+            HttpStatus.BAD_REQUEST
+    ),
+    BEPAID_REQUEST_FAILED(
+            "BEPAID_REQUEST_FAILED",
+            "Failed to process BePaid request",
+            HttpStatus.BAD_GATEWAY
+    ),
+    PAYOUT_NOT_FOUND(
+            "PAYOUT_NOT_FOUND",
+                    "Payout not found",
+            HttpStatus.NOT_FOUND
+            );
 
 
 
