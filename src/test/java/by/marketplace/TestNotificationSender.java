@@ -27,6 +27,10 @@ public class TestNotificationSender implements NotificationSender {
         return messages;
     }
 
+    public void clearMessages() {
+        messages.clear();
+    }
+
     @Override
     public void send(Channel channel, String destination, String code) {
         this.lastCode = code;

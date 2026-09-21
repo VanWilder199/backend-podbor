@@ -168,7 +168,14 @@ public class PurchaseServiceImpl implements PurchaseService {
         return dslContext.selectFrom(PURCHASES)
                 .where(PURCHASES.BUYER_ID.eq(buyerId))
                 .orderBy(PURCHASES.CREATED_AT.desc())
-                .fetchInto(PurchaseDto.class);
+                .fetch(record -> new PurchaseDto(
+                        record.getId(),
+                        record.getReportId(),
+                        record.getAmountByn(),
+                        record.getStatus(),
+                        record.getCreatedAt(),
+                        record.getPaidAt()
+                ));
     }
 
     private Record requirePublishedReport(UUID reportId) {

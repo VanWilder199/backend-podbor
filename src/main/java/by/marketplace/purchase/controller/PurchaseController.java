@@ -23,12 +23,12 @@ public class PurchaseController {
     }
 
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<List<PurchaseDto>> getPurchases(@AuthenticationPrincipal UUID buyerId) {
         return ResponseEntity.ok(purchaseService.getPurchases(buyerId));
     }
 
-    @PostMapping("/")
+    @PostMapping("")
     public ResponseEntity<InitiatePurchaseResponse> createPurchase(@Valid @RequestBody InitiatePurchaseRequest request, @AuthenticationPrincipal UUID buyerId) {
 
         return ResponseEntity.ok(purchaseService.initiatePurchase(buyerId, request.reportId()));

@@ -37,7 +37,7 @@ public class PayoutBatchScheduler {
 
         for (UUID inspectorId : listInspectors) {
 
-            var unbatched = dsl.select(INSPECTOR_PAYOUTS)
+            var unbatched = dsl.selectFrom(INSPECTOR_PAYOUTS)
                     .where(INSPECTOR_PAYOUTS.INSPECTOR_ID.eq(inspectorId))
                     .and(INSPECTOR_PAYOUTS.PAYOUT_BATCH_ID.isNull())
                     .fetch();
