@@ -37,6 +37,7 @@ bepaid:
   shop-id: ${BEPAID_SHOP_ID:}
   secret-key: ${BEPAID_SECRET_KEY:}
   webhook-secret: ${BEPAID_WEBHOOK_SECRET:}
+  test-mode: ${BEPAID_TEST_MODE:true}
 
 sentry:
   dsn: ${SENTRY_DSN:}
@@ -45,3 +46,6 @@ sentry:
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   max-age: 24h
+
+app:
+  base-url: http://localhost:8080

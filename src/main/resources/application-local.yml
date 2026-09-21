@@ -26,3 +26,13 @@ s3:
   secret-key: test
   region: us-east-1
   presigned-url-ttl-minutes: 60
+
+
+bepaid:
+  shop-id: "test"
+  secret-key: "test"
+  webhook-secret: "test"
+  test-mode: true
+
+app:
+  base-url: http://localhost:8080

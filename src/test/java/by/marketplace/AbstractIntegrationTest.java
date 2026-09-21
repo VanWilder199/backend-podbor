@@ -71,6 +71,9 @@ public abstract class AbstractIntegrationTest {
         registry.add("s3.bucket", () -> S3_BUCKET);
         registry.add("s3.region", () -> "us-east-1");
         registry.add("s3.presigned-url-ttl-minutes", () -> "60");
+        registry.add("bepaid.shop-id", () -> "test");
+        registry.add("bepaid.secret-key", () -> "test");
 
     }
+
 }
