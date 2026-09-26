@@ -213,7 +213,22 @@ public enum ErrorCode {
             "PAYOUT_NOT_FOUND",
                     "Payout not found",
             HttpStatus.NOT_FOUND
-            );
+            ),
+    INSPECTOR_NOT_PENDING(
+            "INSPECTOR_NOT_PENDING",
+            "Inspector is not pending",
+            HttpStatus.CONFLICT
+    ),
+    INSPECTOR_ALREADY_BANNED(
+            "INSPECTOR_ALREADY_BANNED",
+            "Inspector is already banned",
+            HttpStatus.CONFLICT
+    ),
+    INSPECTOR_BANNED(
+            "INSPECTOR_BANNED",
+            "Inspector is banned",
+            HttpStatus.FORBIDDEN
+    );
 
 
 

@@ -7,8 +7,6 @@ import by.marketplace.admin.dto.DeleteReportRequest;
 import by.marketplace.admin.dto.ModerationQueueItemDto;
 import by.marketplace.admin.dto.ReviseReportRequest;
 import by.marketplace.shared.exception.ErrorCode;
-import by.marketplace.auth.dto.AdminAuthResponse;
-import by.marketplace.auth.dto.AdminLoginRequest;
 import by.marketplace.auth.service.JwtService;
 import by.marketplace.car.AvByParser;
 import by.marketplace.car.dto.CarParseData;
@@ -25,9 +23,8 @@ import by.marketplace.inspector.dto.PresignedUrlResponse;
 import by.marketplace.inspector.dto.RegisterCarReportRequest;
 import by.marketplace.jooq.tables.records.ModerationLogRecord;
 import by.marketplace.jooq.tables.records.ReportsRecord;
+import by.marketplace.utils.AdminTestUtils;
 import by.marketplace.utils.InspectorUtils;
-import dev.samstevens.totp.code.CodeGenerator;
-import dev.samstevens.totp.code.DefaultCodeGenerator;
 import dev.samstevens.totp.exceptions.CodeGenerationException;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +44,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -127,19 +123,7 @@ public class ModerationFlowTest extends AbstractIntegrationTest {
 
     /** Логин админа через /admin/auth/login и возврат Bearer-заголовков. */
     private HttpHeaders adminHeaders() throws CodeGenerationException {
-        CodeGenerator codeGenerator = new DefaultCodeGenerator();
-        String code = codeGenerator.generate(ADMIN_TOTP_SECRET, Instant.now().getEpochSecond() / 30);
-
-        ResponseEntity<AdminAuthResponse> login = restTemplate.postForEntity(
-                URI.create("/admin/auth/login"),
-                new AdminLoginRequest(ADMIN_EMAIL, ADMIN_PASSWORD, code),
-                AdminAuthResponse.class);
-
-        assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(login.getBody().accessToken());
-        return headers;
+        return AdminTestUtils.adminHeaders(restTemplate, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_TOTP_SECRET);
     }
 
     /** JWT с ролью BUYER — для проверки 403. */
