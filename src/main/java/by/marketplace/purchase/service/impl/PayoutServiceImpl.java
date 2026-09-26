@@ -1,12 +1,16 @@
 package by.marketplace.purchase.service.impl;
 
+import by.marketplace.purchase.dto.PayoutBatch;
 import by.marketplace.purchase.service.PayoutService;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.*;
@@ -43,5 +47,39 @@ public class PayoutServiceImpl implements PayoutService {
            throw new AppException(ErrorCode.PAYOUT_NOT_FOUND);
        }
 
+    }
+
+    @Override
+    public List<PayoutBatch> listBatches(String status) {
+        Condition condition = status == null ? DSL.noCondition() : PAYOUT_BATCHES.STATUS.eq(status);
+
+        return dsl.select(
+                        PAYOUT_BATCHES.ID,
+                        PAYOUT_BATCHES.INSPECTOR_ID,
+                        INSPECTORS.FULL_NAME,
+                        INSPECTORS.EMAIL,
+                        PAYOUT_BATCHES.PERIOD_START,
+                        PAYOUT_BATCHES.PERIOD_END,
+                        PAYOUT_BATCHES.AMOUNT_BYN,
+                        PAYOUT_BATCHES.STATUS,
+                        PAYOUT_BATCHES.CREATED_AT,
+                        PAYOUT_BATCHES.PAID_AT
+                )
+                .from(PAYOUT_BATCHES)
+                .join(INSPECTORS).on(PAYOUT_BATCHES.INSPECTOR_ID.eq(INSPECTORS.ID))
+                .where(condition)
+                .orderBy(PAYOUT_BATCHES.CREATED_AT.desc())
+                .fetch(r -> new PayoutBatch(
+                        r.get(PAYOUT_BATCHES.ID),
+                        r.get(PAYOUT_BATCHES.INSPECTOR_ID),
+                        r.get(INSPECTORS.FULL_NAME),
+                        r.get(INSPECTORS.EMAIL),
+                        r.get(PAYOUT_BATCHES.PERIOD_START),
+                        r.get(PAYOUT_BATCHES.PERIOD_END),
+                        r.get(PAYOUT_BATCHES.AMOUNT_BYN),
+                        r.get(PAYOUT_BATCHES.STATUS),
+                        r.get(PAYOUT_BATCHES.CREATED_AT),
+                        r.get(PAYOUT_BATCHES.PAID_AT)
+                ));
     }
 }
