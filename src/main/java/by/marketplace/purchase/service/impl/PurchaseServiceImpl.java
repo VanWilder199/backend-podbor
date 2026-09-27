@@ -2,6 +2,7 @@ package by.marketplace.purchase.service.impl;
 
 import by.marketplace.auth.dto.Channel;
 import by.marketplace.car.enums.ReportStatus;
+import by.marketplace.config.AppProperties;
 import by.marketplace.jooq.tables.records.PurchasesRecord;
 import by.marketplace.jooq.tables.records.ReportsRecord;
 import by.marketplace.notification.NotificationSender;
@@ -43,6 +44,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final IdempotencyService idempotencyService;
     private final PayoutService payoutService;
     private final NotificationSender notificationSender;
+    private final AppProperties appProperties;
 
     private final ObjectMapper objectMapper;
 
@@ -54,7 +56,11 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     public PurchaseServiceImpl(
             DSLContext dslContext,
-            BePaidClient bePaidClient, IdempotencyService idempotencyService, PayoutService payoutService, NotificationSender notificationSender,
+            BePaidClient bePaidClient,
+            IdempotencyService idempotencyService,
+            PayoutService payoutService,
+            NotificationSender notificationSender,
+            AppProperties appProperties,
             ObjectMapper objectMapper,
             @Value("${bepaid.shop-id}") String shopId,
             @Value("${bepaid.secret-key}") String secretKey
@@ -64,6 +70,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         this.idempotencyService = idempotencyService;
         this.payoutService = payoutService;
         this.notificationSender = notificationSender;
+        this.appProperties = appProperties;
         this.objectMapper = objectMapper;
         this.shopId = shopId;
         this.secretKey = secretKey;
@@ -243,7 +250,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         payoutService.createPayout(purchase.getId(), report.getInspectorId(), purchase.getAmountByn());
 
-        createAccessToken(purchase.getId());
+        String rawToken = createAccessToken(purchase.getId());
 
         String email = dslContext.select(USERS.EMAIL)
                 .from(USERS)
@@ -251,11 +258,13 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .fetchOne(USERS.EMAIL);
 
         if (email != null) {
-            notificationSender.notify(Channel.EMAIL, email, "ссылку и текст добавим позже");
+            String viewUrl = appProperties.baseUrl() + "/reports/view?token=" + rawToken;
+
+            notificationSender.notify(Channel.EMAIL, email, "Оплата прошла успешно! Ссылка на отчет: " + viewUrl);
         }
     }
 
-    private void createAccessToken(UUID purchaseId) {
+    private String createAccessToken(UUID purchaseId) {
         String rawToken = randomToken();
 
         dslContext.insertInto(REPORT_ACCESS_TOKENS)
@@ -263,6 +272,8 @@ public class PurchaseServiceImpl implements PurchaseService {
                 .set(REPORT_ACCESS_TOKENS.TOKEN_HASH, HexFormat.of().formatHex(sha256(rawToken)))
                 .set(REPORT_ACCESS_TOKENS.EXPIRES_AT, OffsetDateTime.now().plusDays(30))
                 .execute();
+
+        return rawToken;
     }
 
       private String randomToken() {

@@ -27,7 +27,7 @@ s3:
   bucket: ${S3_BUCKET:marketplace-media}
   access-key: ${S3_ACCESS_KEY:}
   secret-key: ${[Secrets3]:}
-  region: us-east-1
+  region: ${S3_REGION:us-east-1}
   presigned-url-ttl-minutes: 60
 
 unisender:
