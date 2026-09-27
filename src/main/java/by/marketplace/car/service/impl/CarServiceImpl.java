@@ -6,6 +6,7 @@ import by.marketplace.car.dto.CarParseData;
 import by.marketplace.car.mapper.CarMapper;
 import by.marketplace.car.service.CarService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 import static by.marketplace.jooq.Tables.CARS;
 import static by.marketplace.jooq.Tables.REPORT_REQUESTS;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CarServiceImpl implements CarService {
@@ -31,6 +32,7 @@ public class CarServiceImpl implements CarService {
                 .fetchOptional(CARS.ID);
 
         if (existing.isPresent()) {
+            log.debug("Car already exists: carId={}, url={}", existing.get(), url);
             return existing.get();
         }
 
@@ -47,10 +49,13 @@ public class CarServiceImpl implements CarService {
                 .returning(CARS.ID)
                 .fetchOptional(CARS.ID);
 
-        // need to prevent NPE in case of race condition
         if (inserted.isPresent()) {
+            log.info("Car created from av.by: carId={}, url={}, vin={}",
+                    inserted.get(), url, parsedData.vin());
             return inserted.get();
         }
+
+        log.debug("Car insert race, fetching existing: url={}", url);
 
         return dslContext.select(CARS.ID)
                 .from(CARS)
@@ -77,13 +82,14 @@ public class CarServiceImpl implements CarService {
                 .returning(REPORT_REQUESTS.ID)
                 .fetchOptional(REPORT_REQUESTS.ID);
 
-        if (inserted.isPresent()) {
-            return inserted.get();
-        }
+        Long requestId = inserted.orElseGet(() ->
+                dslContext.select(REPORT_REQUESTS.ID)
+                        .from(REPORT_REQUESTS)
+                        .where(REPORT_REQUESTS.CAR_ID.eq(carId).and(REPORT_REQUESTS.BUYER_ID.eq(buyerId)))
+                        .fetchOne(REPORT_REQUESTS.ID));
 
-        return dslContext.select(REPORT_REQUESTS.ID)
-                .from(REPORT_REQUESTS)
-                .where(REPORT_REQUESTS.CAR_ID.eq(carId).and(REPORT_REQUESTS.BUYER_ID.eq(buyerId)))
-                .fetchOne(REPORT_REQUESTS.ID);
+        log.info("Report request created: requestId={}, carId={}, buyerId={}", requestId, carId, buyerId);
+
+        return requestId;
     }
 }

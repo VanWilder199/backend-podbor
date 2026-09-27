@@ -1,12 +1,13 @@
 package by.marketplace.inspector;
 
 import by.marketplace.shared.exception.AppException;
+import by.marketplace.shared.exception.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,11 +16,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 public class TelegramAuthFilter extends OncePerRequestFilter {
 
     private static final String HEADER_NAME = "X-Telegram-Data";
-
-    private static final Logger log = LoggerFactory.getLogger(TelegramAuthFilter.class);
 
     private final TelegramInitDataValidator validator;
 
@@ -52,8 +52,14 @@ public class TelegramAuthFilter extends OncePerRequestFilter {
                     );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+            MDC.put("tgUserId", String.valueOf(user.id()));
         } catch (AppException e) {
-            log.debug("Rejected X-Telegram-Data: {}", e.getMessage());
+            if (ErrorCode.TELEGRAM_AUTH_EXPIRED.equals(e.getErrorCode())) {
+                log.debug("Telegram auth expired: path={}", request.getRequestURI());
+            } else {
+                log.warn("Invalid Telegram auth: errorCode={} path={}",
+                        e.getErrorCode().getCode(), request.getRequestURI());
+            }
             SecurityContextHolder.clearContext();
         }
 

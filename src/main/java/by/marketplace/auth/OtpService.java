@@ -7,10 +7,10 @@ import by.marketplace.jooq.tables.records.OtpCodesRecord;
 import by.marketplace.notification.NotificationSender;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import by.marketplace.shared.logging.LogMasks;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +22,10 @@ import java.util.UUID;
 import static by.marketplace.jooq.Tables.OTP_CODES;
 import static by.marketplace.jooq.Tables.USERS;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OtpService {
-    private final Logger logger = LoggerFactory.getLogger(OtpService.class);
-
     private final DSLContext dsl;
     private final OtpRateLimiter rateLimiter;
     private final PasswordEncoder passwordEncoder;
@@ -52,7 +51,7 @@ public class OtpService {
                 .fetchOne()
                 .getId();
 
-        logger.info("OTP created: id={}, destination={}, channel={}", otpId, destination, channel);
+        log.info("OTP created: id={}, destination={}, channel={}", otpId, LogMasks.destination(destination), channel);
 
         notificationService.sendOtpAsync(otpId, channel, destination, code);
     }
@@ -68,14 +67,21 @@ public class OtpService {
                 .fetchOne();
 
         if (otp == null) {
+            log.info("OTP verify: no active code, channel={}, destination={}",
+                    channel, LogMasks.destination(destination));
             throw new AppException(ErrorCode.OTP_EXPIRED);
         }
 
         if (otp.getAttempts() >= MAX_ATTEMPTS) {
+            log.warn("OTP verify: attempts exhausted, otpId={}, destination={}",
+                    otp.getId(), LogMasks.destination(destination));
             throw new AppException(ErrorCode.OTP_EXPIRED);
         }
 
         if (!passwordEncoder.matches(code, otp.getCode())) {
+            log.warn("OTP verify: invalid code, otpId={}, attempt={}, max={}",
+                    otp.getId(), otp.getAttempts() + 1, MAX_ATTEMPTS);
+
             dsl.update(OTP_CODES)
                     .set(OTP_CODES.ATTEMPTS, otp.getAttempts() + 1)
                     .where(OTP_CODES.ID.eq(otp.getId()))
@@ -90,6 +96,8 @@ public class OtpService {
                 .execute();
 
         UUID userId = upsertByDestination(channel, destination);
+
+        log.info("Buyer authenticated: userId={}, channel={}", userId, channel);
 
         return jwtService.issueTokens(userId, channel == Channel.EMAIL ? destination : null, "BUYER");
     }

@@ -4,6 +4,7 @@ import by.marketplace.purchase.dto.PayoutBatch;
 import by.marketplace.purchase.service.PayoutService;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.*;
 
+@Slf4j
 @Service
 public class PayoutServiceImpl implements PayoutService {
     private DSLContext dsl;
@@ -32,6 +34,9 @@ public class PayoutServiceImpl implements PayoutService {
                 .set(INSPECTOR_PAYOUTS.INSPECTOR_ID, inspectorId)
                 .set(INSPECTOR_PAYOUTS.AMOUNT_BYN, amount)
                 .execute();
+
+        log.info("Payout accrued: purchaseId={}, inspectorId={}, grossAmountByn={}, netAmountByn={}",
+                purchaseId, inspectorId, grossAmountByn, amount);
     }
 
     @Override
@@ -47,6 +52,7 @@ public class PayoutServiceImpl implements PayoutService {
            throw new AppException(ErrorCode.PAYOUT_NOT_FOUND);
        }
 
+       log.info("Payout batch marked paid: batchId={}, adminId={}", payoutId, adminId);
     }
 
     @Override

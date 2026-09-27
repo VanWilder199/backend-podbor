@@ -49,3 +49,15 @@ telegram:
 
 app:
   base-url: http://localhost:8080
+
+logging:
+  level:
+    root: INFO
+    by.marketplace: INFO
+    org.springframework.security: WARN
+    org.jooq.tools.LoggerListener: INFO       # никогда не DEBUG вне local (TOTP-секреты и хэши в SQL)
+    org.jooq.Constants: WARN                  # убрать баннер jOOQ
+    software.amazon.awssdk: WARN
+    software.amazon.awssdk.request: WARN      # на DEBUG пишет запросы к S3
+  pattern:
+    correlation: "[%X{traceId:-}] [%X{userId:-}%X{adminId:-}%X{tgUserId:-}%X{job:-}] "

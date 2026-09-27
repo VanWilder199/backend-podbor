@@ -25,7 +25,8 @@ public class ValidationExceptionHandler extends ResponseEntityExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        log.error("Unexpected exception at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        log.error("Unhandled exception: method={} path={}",
+                request.getMethod(), request.getRequestURI(), ex);
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -38,8 +39,18 @@ public class ValidationExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setProperty("path", request.getRequestURI());
         problemDetail.setProperty("errorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
 
-        return problemDetail;
+        return ProblemDetails.withTraceId(problemDetail);
 
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers,
+            HttpStatusCode statusCode, WebRequest request) {
+        if (body instanceof ProblemDetail pd) {
+            ProblemDetails.withTraceId(pd);
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 
     @Override
@@ -47,14 +58,18 @@ public class ValidationExceptionHandler extends ResponseEntityExceptionHandler {
             MethodArgumentNotValidException ex, HttpHeaders headers,
             HttpStatusCode status, WebRequest request) {
 
-        log.error("Validation failed at {}: {}", request.getDescription(false), ex.getMessage());
+        log.warn("Validation failed: path={} errors={}",
+                request.getDescription(false),
+                ex.getBindingResult().getFieldErrors().stream()
+                        .map(fe -> fe.getField() + ":" + fe.getCode())
+                        .toList());
 
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
         pd.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .toList());
         pd.setProperty("errorCode", ErrorCode.BAD_REQUEST.getCode());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ProblemDetails.withTraceId(pd));
     }
 
 }
