@@ -9,10 +9,12 @@ import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/inspector")
 @RequiredArgsConstructor
@@ -46,6 +48,8 @@ public class InspectorController {
         var inspector = inspectorService.findByTelegramId(telegramUser.id());
 
         if ("banned".equals(inspector.status())) {
+            log.warn("Banned inspector attempted to create report: inspectorId={}, tgUserId={}",
+                    inspector.id(), telegramUser.id());
             throw new AppException(ErrorCode.INSPECTOR_BANNED);
         }
 

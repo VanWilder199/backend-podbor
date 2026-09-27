@@ -10,6 +10,7 @@ import by.marketplace.jooq.tables.records.InspectorsRecord;
 import by.marketplace.notification.NotificationSender;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.INSPECTORS;
 
+@Slf4j
 @Service
 public class InspectorServiceImpl implements InspectorService {
     private final DSLContext dsl;
@@ -63,7 +65,12 @@ public class InspectorServiceImpl implements InspectorService {
                 .fetchOptional();
 
 
-         return mapper.toDto(inspectorsRecord.orElseThrow(() -> new AppException(ErrorCode.INSPECTOR_ALREADY_REGISTERED)));
+         InspectorsRecord record = inspectorsRecord.orElseThrow(() -> new AppException(ErrorCode.INSPECTOR_ALREADY_REGISTERED));
+
+         log.info("Inspector registered: inspectorId={}, tgUserId={}",
+                 record.getId(), record.getTelegramUserId());
+
+         return mapper.toDto(record);
     }
 
     @Override
@@ -88,6 +95,8 @@ public class InspectorServiceImpl implements InspectorService {
                 .where(INSPECTORS.ID.eq(inspectorId))
                 .execute();
 
+         log.info("Inspector verified: inspectorId={}, adminId={}", inspectorId, adminId);
+
          notificationSender.notify(Channel.EMAIL, inspector.getEmail(), "Ваш аккаунт подборщика подтверждён");
 
          return findByTelegramId(inspector.getTelegramUserId());
@@ -102,6 +111,10 @@ public class InspectorServiceImpl implements InspectorService {
                 .set(INSPECTORS.STATUS, "banned")
                 .where(INSPECTORS.ID.eq(inspectorId))
                 .execute();
+
+        log.warn("Inspector banned: inspectorId={}, adminId={}, previousStatus={}, reasonLength={}",
+                inspectorId, adminId, inspectorsRecord.getStatus(),
+                reason == null ? 0 : reason.length());
 
         notificationSender.notify(Channel.EMAIL, inspectorsRecord.getEmail(),
                 "Ваш аккаунт подборщика заблокирован: " + reason);

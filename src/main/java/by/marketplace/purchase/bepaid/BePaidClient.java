@@ -2,12 +2,15 @@ package by.marketplace.purchase.bepaid;
 
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class BePaidClient {
     private final RestClient restClient;
@@ -47,12 +50,16 @@ public class BePaidClient {
                     .body(BePaidCheckoutResponse.class);
 
             return response;
+        } catch (RestClientResponseException e) {
+            log.error("bePaid createCheckout failed: purchaseId={}, amountByn={}, status={}, responseBody={}",
+                    purchaseId, amountByn, e.getStatusCode(), truncate(e.getResponseBodyAsString()), e);
+            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED, "bePaid createCheckout failed", e);
         } catch (RestClientException e) {
-            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED);
+            log.error("bePaid createCheckout failed: purchaseId={}, amountByn={}",
+                    purchaseId, amountByn, e);
+            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED, "bePaid createCheckout failed", e);
         }
-
-
-    };
+    }
 
     public BePaidCheckoutStatusResponse getCheckoutStatus(String token) {
 
@@ -62,10 +69,19 @@ public class BePaidClient {
                     .retrieve()
                     .body(BePaidCheckoutStatusResponse.class);
             return response;
+        } catch (RestClientResponseException e) {
+            log.warn("bePaid getCheckoutStatus failed: status={}", e.getStatusCode(), e);
+            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED, "bePaid getCheckoutStatus failed", e);
         } catch (RestClientException e) {
-            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED);
+            log.warn("bePaid getCheckoutStatus failed", e);
+            throw new AppException(ErrorCode.BEPAID_REQUEST_FAILED, "bePaid getCheckoutStatus failed", e);
         }
+    }
 
-
-    };
+    private String truncate(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() <= 500 ? value : value.substring(0, 500) + "...";
+    }
 }

@@ -7,6 +7,7 @@ import by.marketplace.car.service.ReportService;
 import by.marketplace.jooq.tables.records.*;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.jooq.InsertValuesStep4;
 import org.jooq.impl.DSL;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static by.marketplace.jooq.Tables.*;
 
+@Slf4j
 @Service
 public class ReportServiceImpl implements ReportService {
     private final DSLContext dslContext;
@@ -36,6 +38,9 @@ public class ReportServiceImpl implements ReportService {
                 .fetchOne(REPORTS.ID);
 
         SectionKey[] sectionKeys = SectionKey.values();
+
+        log.info("Report created: reportId={}, inspectorId={}, carId={}, sections={}",
+                reportId, inspectorId, carId, sectionKeys.length);
 
         InsertValuesStep4<ReportSectionRecord, UUID, String, Integer, String> sectionInsert = dslContext.insertInto(REPORT_SECTION,
                 REPORT_SECTION.REPORT_ID, REPORT_SECTION.SECTION_KEY, REPORT_SECTION.ORDER_NO, REPORT_SECTION.SUMMARY);
@@ -97,6 +102,9 @@ public class ReportServiceImpl implements ReportService {
         }
 
         insert.execute();
+
+        log.debug("Report section updated: reportId={}, sectionId={}, inspectorId={}, itemsCount={}",
+                reportId, sectionId, inspectorId, request.items().size());
     }
 
     @Transactional
@@ -137,6 +145,9 @@ public class ReportServiceImpl implements ReportService {
         }
 
         insert.execute();
+
+        log.debug("Paint measurements updated: reportId={}, inspectorId={}, itemsCount={}",
+                reportid, inspectorId, request.measurements().size());
     }
 
     @Override
@@ -148,6 +159,9 @@ public class ReportServiceImpl implements ReportService {
                 .set(REPORTS.PRICE_BYN, request.priceByn())
                 .where(REPORTS.ID.eq(reportid))
                 .execute();
+
+        log.debug("Report conclusion updated: reportId={}, inspectorId={}, priceByn={}",
+                reportid, inspectorId, request.priceByn());
 
     }
 
@@ -165,6 +179,8 @@ public class ReportServiceImpl implements ReportService {
                 .fetch();
 
         if (!incomplete.isEmpty()) {
+            log.info("Report submit rejected: reportId={}, reason=sections_incomplete, incompleteSections={}",
+                    reportid, incomplete.size());
             throw new AppException(ErrorCode.REPORT_INCOMPLETE);
         }
 
@@ -177,10 +193,12 @@ public class ReportServiceImpl implements ReportService {
                 .fetchOptional();
 
         if (video.isEmpty()) {
+            log.info("Report submit rejected: reportId={}, reason=no_video", reportid);
             throw new AppException(ErrorCode.REPORT_INCOMPLETE);
         }
 
         if (report.getConclusionText() == null || report.getConclusionText().isBlank() || report.getPriceByn() == null) {
+            log.info("Report submit rejected: reportId={}, reason=no_conclusion_or_price", reportid);
             throw new AppException(ErrorCode.REPORT_INCOMPLETE);
         }
 
@@ -188,6 +206,9 @@ public class ReportServiceImpl implements ReportService {
                 .set(REPORTS.STATUS, "pending_review")
                 .where(REPORTS.ID.eq(reportid))
                 .execute();
+
+        log.info("Report submitted for moderation: reportId={}, inspectorId={}, versionNo={}",
+                reportid, inspectorId, report.getVersionNo());
 
     }
 
@@ -308,7 +329,11 @@ public class ReportServiceImpl implements ReportService {
             throw new AppException(ErrorCode.REPORT_NOT_FOUND);
         }
 
-        if (!report.getInspectorId().equals(inspectorId)) throw new AppException(ErrorCode.REPORT_ACCESS_DENIED);
+        if (!report.getInspectorId().equals(inspectorId)) {
+            log.warn("Report access denied: reportId={}, inspectorId={}, ownerId={}",
+                    reportId, inspectorId, report.getInspectorId());
+            throw new AppException(ErrorCode.REPORT_ACCESS_DENIED);
+        }
 
         return report;
     };

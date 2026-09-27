@@ -13,7 +13,9 @@ jwt:
 logging:
   level:
     by.marketplace: DEBUG
-    org.jooq.tools.LoggerListener: DEBUG
+    # jOOQ на DEBUG пишет SQL со значениями (включая TOTP-секрет и хэши).
+    # Включать только осознанно для отладки запросов.
+    # org.jooq.tools.LoggerListener: DEBUG
 
 telegram:
   bot-token: "1234567890:AAFgH8K9L0mNpQrStUvWxYz"

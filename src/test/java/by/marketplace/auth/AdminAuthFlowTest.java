@@ -43,7 +43,7 @@ public class AdminAuthFlowTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        dsl.truncate("admins").execute();
+        dsl.truncate("admins").cascade().execute();
 
         dsl.insertInto(ADMINS)
                 .set(ADMINS.EMAIL, "admin@example.com")

@@ -6,6 +6,7 @@ import by.marketplace.config.JwtProperties;
 import by.marketplace.jooq.tables.records.RefreshTokensRecord;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ import java.util.Date;
 import static by.marketplace.jooq.Tables.*;
 
 
+@Slf4j
 @Service
 public class JwtServiceImpl implements JwtService {
     private final SecretKey key;
@@ -102,6 +104,7 @@ public class JwtServiceImpl implements JwtService {
                 .fetchOne();
 
         if (token == null) {
+            log.warn("Refresh token rejected (unknown, expired or revoked)");
             throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
@@ -116,6 +119,8 @@ public class JwtServiceImpl implements JwtService {
         String email = dsl.select(USERS.EMAIL).from(USERS)
                 .where(USERS.ID.eq(token.getUserId()))
                 .fetchOne(USERS.EMAIL);
+
+        log.debug("Refresh token rotated: userId={}", token.getUserId());
 
         return issueTokens(token.getUserId(), email, "BUYER");
     }

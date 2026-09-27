@@ -3,6 +3,7 @@ package by.marketplace.car;
 import by.marketplace.car.dto.CarParseData;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Component
 public class AvByParser {
     private static final String USER_AGENT =
@@ -28,48 +30,64 @@ public class AvByParser {
 
 
     public CarParseData parse(String url) {
+        long start = System.nanoTime();
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent(USER_AGENT)
                     .timeout(TIMEOUT_MS)
                     .get();
 
-            return extractData(doc);
+            CarParseData data = extractData(doc, url);
+            log.info("av.by parsed: url={}, durationMs={}, make={}, model={}, year={}, hasVin={}",
+                    url, elapsedMs(start), data.make(), data.model(), data.year(), data.vin() != null);
+            return data;
         } catch (HttpStatusException e) {
             if (e.getStatusCode() == 404) {
-                throw new AppException(ErrorCode.CAR_LISTING_NOT_FOUND);
+                log.info("av.by listing not found: url={}, durationMs={}", url, elapsedMs(start));
+                throw new AppException(ErrorCode.CAR_LISTING_NOT_FOUND, "av.by listing not found", e);
             }
-            throw new AppException(ErrorCode.PARSER_ERROR);
+            log.warn("av.by HTTP error: url={}, status={}, durationMs={}",
+                    url, e.getStatusCode(), elapsedMs(start), e);
+            throw new AppException(ErrorCode.PARSER_ERROR, "av.by HTTP error", e);
         } catch (IOException e) {
-            throw new AppException(ErrorCode.PARSER_ERROR);
+            log.warn("av.by request failed: url={}, durationMs={}", url, elapsedMs(start), e);
+            throw new AppException(ErrorCode.PARSER_ERROR, "av.by request failed", e);
         }
     }
 
     CarParseData extractData(Document doc) {
-        String make = extractMake(doc);
-        String model = extractModel(doc);
-        Integer year = extractYear(doc);
-        String vin = extractVin(doc);
+        return extractData(doc, null);
+    }
+
+    CarParseData extractData(Document doc, String url) {
+        String make = extractMake(doc, url);
+        String model = extractModel(doc, url);
+        Integer year = extractYear(doc, url);
+        String vin = extractVin(doc, url);
 
         return new CarParseData(vin, make, model, year);
     }
 
 
-    private String extractMake(Document doc) {
+    private String extractMake(Document doc, String url) {
         Element makeEl = doc.selectFirst(MAKE_SELECTOR);
         if (makeEl == null) {
+            log.warn("av.by layout changed? field=make, selector={}, url={}", MAKE_SELECTOR, url);
             throw new AppException(ErrorCode.PARSER_ERROR);
         }
         return makeEl.attr("content");
     }
 
-    private String extractVin(Document doc) {
+    private String extractVin(Document doc, String url) {
         Element vinEl = doc.selectFirst(VIN_SELECTOR);
+        if (vinEl == null) {
+            log.debug("av.by element not found: field=vin, selector={}, url={}", VIN_SELECTOR, url);
+        }
         return vinEl != null ? vinEl.text() : null;
     }
 
 
-    private String extractModel(Document doc) {
+    private String extractModel(Document doc, String url) {
         Elements breadcrumbItems = doc.select(BREADCRUMB_ITEM_SELECTOR);
         for (Element item : breadcrumbItems) {
             Element positionEl = item.selectFirst("span[itemprop=position]");
@@ -80,18 +98,26 @@ public class AvByParser {
                 }
             }
         }
+        log.warn("av.by layout changed? field=model, selector={}, url={}", BREADCRUMB_ITEM_SELECTOR, url);
         throw new AppException(ErrorCode.PARSER_ERROR);
     }
 
-    private Integer extractYear(Document doc) {
+    private Integer extractYear(Document doc, String url) {
         Element paramsEl = doc.selectFirst(PARAMS_SELECTOR);
         if (paramsEl == null) {
+            log.debug("av.by element not found: field=year, selector={}, url={}", PARAMS_SELECTOR, url);
             return null;
         }
         Matcher matcher = YEAR_PATTERN.matcher(paramsEl.text());
-        return matcher.find() ? Integer.parseInt(matcher.group(1)) : null;
+        boolean found = matcher.find();
+        if (!found) {
+            log.debug("av.by year not parsed from params");
+        }
+        return found ? Integer.parseInt(matcher.group(1)) : null;
     }
 
-
+    private long elapsedMs(long startNanos) {
+        return (System.nanoTime() - startNanos) / 1_000_000;
+    }
 
 }

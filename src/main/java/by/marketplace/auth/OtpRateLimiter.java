@@ -3,25 +3,22 @@ package by.marketplace.auth;
 import by.marketplace.auth.dto.Channel;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import by.marketplace.shared.logging.LogMasks;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 
 import static by.marketplace.jooq.tables.OtpRateLimits.OTP_RATE_LIMITS;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OtpRateLimiter {
-    private final Logger logger = LoggerFactory.getLogger(OtpRateLimiter.class);
-
     private final DSLContext dsl;
 
     private static final int MAX_REQUESTS = 3;
@@ -40,7 +37,7 @@ public class OtpRateLimiter {
                 .fetchOne();
 
        if (record == null) {
-                      logger.info("Creating new rate limit record for destination={}", destination);
+                      log.debug("Creating new rate limit record for destination={}", LogMasks.destination(destination));
 
                       createLimit(now, destination, channel);
                       return;
@@ -52,14 +49,15 @@ public class OtpRateLimiter {
 
 
         if (windowStart.plusSeconds(WINDOW_SECONDS).isBefore(now)) {
-            logger.info("Resetting rate limit for destination={}", destination);
+            log.debug("Resetting rate limit for destination={}", LogMasks.destination(destination));
 
             this.resetLimit(now, destination);
             return;
         }
 
         if (sendCount >= MAX_REQUESTS) {
-            logger.info("Rate limit exceeded for destination={}", destination);
+            log.warn("OTP rate limit exceeded: channel={}, destination={}, sendCount={}",
+                    channel, LogMasks.destination(destination), sendCount);
             throw new AppException(ErrorCode.OTP_RATE_LIMIT_EXCEEDED);
         }
 

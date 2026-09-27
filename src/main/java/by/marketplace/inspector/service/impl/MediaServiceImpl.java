@@ -6,10 +6,10 @@ import by.marketplace.inspector.dto.PresignedUrlResponse;
 import by.marketplace.inspector.service.MediaService;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -23,9 +23,9 @@ import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.REPORT_MEDIA;
 
+@Slf4j
 @Service
 public class MediaServiceImpl  implements MediaService {
-    private final Logger logger = LoggerFactory.getLogger(MediaServiceImpl.class);
 
     public static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/png",
@@ -69,6 +69,9 @@ public class MediaServiceImpl  implements MediaService {
         PresignedPutObjectRequest presignedPutObjectRequest = s3Presigner.presignPutObject(presignRequest);
         String uploadUrl = presignedPutObjectRequest.url().toString();
 
+        log.debug("Presigned PUT issued: reportId={}, sectionId={}, s3Key={}, contentType={}, ttlMinutes={}",
+                reportId, sectionId, s3Key, contentType, s3Properties.presignedUrlTtlMinutes());
+
         return new PresignedUrlResponse(uploadUrl, s3Key);
     }
 
@@ -81,7 +84,9 @@ public class MediaServiceImpl  implements MediaService {
                     .key(s3Key)
                     .build();
 
+            long start = System.nanoTime();
             s3Client.headObject(headObjectRequest);
+            log.debug("S3 headObject: s3Key={}, durationMs={}", s3Key, (System.nanoTime() - start) / 1_000_000);
 
             String status = kind == MediaKind.PHOTO ? "uploaded" : "pending";
 
@@ -93,16 +98,24 @@ public class MediaServiceImpl  implements MediaService {
                     .set(REPORT_MEDIA.STATUS, status)
                     .execute();
 
+            log.info("Media confirmed: reportId={}, sectionId={}, kind={}, status={}, s3Key={}",
+                    reportId, sectionId, kind, status, s3Key);
+
         } catch (S3Exception e) {
             if (e.statusCode() == 404) {
+                log.warn("Media confirm for missing object: reportId={}, s3Key={}", reportId, s3Key);
                 throw new AppException(ErrorCode.MEDIA_NOT_FOUND);
             }
 
+            log.error("Media confirm failed: reportId={}, s3Key={}, statusCode={}, awsErrorCode={}, awsRequestId={}",
+                    reportId, s3Key, e.statusCode(),
+                    e.awsErrorDetails() != null ? e.awsErrorDetails().errorCode() : null,
+                    e.requestId(), e);
 
-            logger.error("Failed to confirm upload: {}", e.getMessage());
-
-
-            throw new AppException(ErrorCode.UNEXPECTED_ERROR);
+            throw new AppException(ErrorCode.UNEXPECTED_ERROR, "Media confirm failed", e);
+        } catch (SdkClientException e) {
+            log.error("Media confirm failed, S3 unavailable: reportId={}, s3Key={}", reportId, s3Key, e);
+            throw new AppException(ErrorCode.UNEXPECTED_ERROR, "Media confirm failed", e);
         }
     }
 

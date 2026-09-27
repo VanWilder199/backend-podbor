@@ -6,6 +6,7 @@ import by.marketplace.auth.service.JwtService;
 import by.marketplace.inspector.TelegramAuthFilter;
 import by.marketplace.inspector.TelegramInitDataValidator;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -19,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Slf4j
 @Configuration
 public class SecurityConfig {
 
@@ -80,12 +82,18 @@ public class SecurityConfig {
 
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
-        return (request, response, ex) -> response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        return (request, response, ex) -> {
+            log.warn("Access denied: path={} principal={}", request.getRequestURI(), request.getUserPrincipal());
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        };
     }
 
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
-        return (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return (request, response, authException) -> {
+            log.debug("Authentication required: path={}", request.getRequestURI());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        };
     }
 
     @Bean

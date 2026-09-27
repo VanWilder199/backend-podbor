@@ -3,13 +3,14 @@ package by.marketplace.auth;
 
 import by.marketplace.auth.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,9 +20,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final JwtService jwtService;
 
@@ -58,8 +58,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+            MDC.put("ADMIN".equals(role) ? "adminId" : "userId", userId.toString());
+        } catch (ExpiredJwtException e) {
+            log.debug("Access token expired: path={}", request.getRequestURI());
+            SecurityContextHolder.clearContext();
         } catch (JwtException | IllegalArgumentException e) {
-            log.debug("Rejected access token: {}", e.getMessage());
+            log.warn("Invalid access token: reason={} path={}",
+                    e.getClass().getSimpleName(), request.getRequestURI());
             SecurityContextHolder.clearContext();
         }
 

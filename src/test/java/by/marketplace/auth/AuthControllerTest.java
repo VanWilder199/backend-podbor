@@ -6,14 +6,18 @@ import by.marketplace.auth.service.JwtService;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -25,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 class AuthControllerTest {
 
     @Autowired
@@ -52,6 +57,16 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"phoneNumber\":\"abc\"}"))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void sendOtp_invalidPhone_rejectedValueIsNotLogged(CapturedOutput output) throws Exception {
+        mockMvc.perform(post("/auth/otp/send")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"phoneNumber\":\"+3752999\"}"))
+            .andExpect(status().isBadRequest());
+
+        assertThat(output).doesNotContain("+3752999");
     }
 
     @Test

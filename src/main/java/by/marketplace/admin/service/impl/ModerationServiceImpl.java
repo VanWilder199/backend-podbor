@@ -13,6 +13,7 @@ import by.marketplace.notification.NotificationSender;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ModerationServiceImpl implements ModerationService {
@@ -75,15 +77,20 @@ public class ModerationServiceImpl implements ModerationService {
 
         logDecision(reportId, adminId, "approve", null);
 
+        log.info("Report approved: reportId={}, adminId={}, inspectorId={}, carId={}, versionNo={}",
+                reportId, adminId, report.getInspectorId(), report.getCarId(), report.getVersionNo());
+
         String inspectorEmail = getInspectorEmail(report);
         notificationService.notify(Channel.EMAIL, inspectorEmail, "Ваш отчёт одобрен и опубликован");
 
-        dslContext.selectFrom(REPORT_REQUESTS)
+        var reportRequests = dslContext.selectFrom(REPORT_REQUESTS)
                 .where(REPORT_REQUESTS.CAR_ID.eq(report.getCarId()))
-                .fetch()
-                .forEach(request ->
-                        notificationService.notify(Channel.EMAIL, request.getEmail(),
-                                "Ваш запрос на отчёт был одобрен"));
+                .fetch();
+        reportRequests.forEach(request ->
+                notificationService.notify(Channel.EMAIL, request.getEmail(),
+                        "Ваш запрос на отчёт был одобрен"));
+        log.info("Report request notifications sent: reportId={}, carId={}, count={}",
+                reportId, report.getCarId(), reportRequests.size());
     }
 
     @Transactional
@@ -97,6 +104,10 @@ public class ModerationServiceImpl implements ModerationService {
                 .execute();
 
         logDecision(reportId, adminId, "revise", reasonText);
+
+        log.info("Report sent to revision: reportId={}, adminId={}, inspectorId={}, reasonLength={}",
+                reportId, adminId, report.getInspectorId(),
+                reasonText == null ? 0 : reasonText.length());
 
         String inspectorEmail = getInspectorEmail(report);
         notificationService.notify(Channel.EMAIL, inspectorEmail, "Отчёт требует правок: " + reasonText);
@@ -113,6 +124,10 @@ public class ModerationServiceImpl implements ModerationService {
                 .execute();
 
         logDecision(reportId, adminId, "delete", reasonText);
+
+        log.info("Report deleted: reportId={}, adminId={}, inspectorId={}, previousStatus={}, reasonLength={}",
+                reportId, adminId, report.getInspectorId(), report.getStatus(),
+                reasonText == null ? 0 : reasonText.length());
 
         String inspectorEmail = getInspectorEmail(report);
         notificationService.notify(Channel.EMAIL, inspectorEmail, "Ваш отчёт удалён: " + reasonText);
@@ -151,10 +166,16 @@ public class ModerationServiceImpl implements ModerationService {
     }
 
     private String getInspectorEmail(ReportsRecord report) {
-        return dslContext.select(INSPECTORS.EMAIL)
+        String email = dslContext.select(INSPECTORS.EMAIL)
                 .from(INSPECTORS)
                 .where(INSPECTORS.ID.eq(report.getInspectorId()))
                 .fetchOne(INSPECTORS.EMAIL);
+
+        if (email == null) {
+            log.warn("Inspector email missing, notification skipped: reportId={}, inspectorId={}",
+                    report.getId(), report.getInspectorId());
+        }
+        return email;
     }
 
     private void logDecision(UUID reportId, UUID adminId, String action, String reason) {

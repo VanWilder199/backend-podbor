@@ -7,6 +7,8 @@ import by.marketplace.config.JwtProperties;
 import by.marketplace.jooq.tables.records.AdminsRecord;
 import by.marketplace.shared.exception.AppException;
 import by.marketplace.shared.exception.ErrorCode;
+import by.marketplace.shared.logging.LogMasks;
+import by.marketplace.shared.logging.RequestLoggingFilter;
 import dev.samstevens.totp.code.CodeVerifier;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
 import dev.samstevens.totp.code.DefaultCodeVerifier;
@@ -15,7 +17,9 @@ import dev.samstevens.totp.qr.QrData;
 import dev.samstevens.totp.secret.DefaultSecretGenerator;
 import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
+import org.slf4j.MDC;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +27,7 @@ import java.util.UUID;
 
 import static by.marketplace.jooq.Tables.ADMINS;
 
+@Slf4j
 @Service
 public class AdminAuthServiceImpl implements AdminAuthService {
     private final DSLContext dsl;
@@ -44,15 +49,19 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         AdminsRecord admin =  requireAdminByCredentials(req.email(), req.password());
 
         if (admin.getTotpSecret() == null) {
+            log.warn("Admin login failed: TOTP not configured, adminId={}", admin.getId());
             throw new AppException(ErrorCode.ADMIN_TOTP_NOT_CONFIGURED);
         }
 
         if (!codeVerifier.isValidCode(admin.getTotpSecret(), req.totpCode())) {
+            log.warn("Admin login failed: reason=bad_totp, adminId={}", admin.getId());
             throw new AppException(ErrorCode.ADMIN_TOTP_INVALID);
         }
 
         long expirationMinutes = jwtProperties.getAdminAccessTokenExpiration();
         String accessToken = jwtService.generateAccessToken(admin.getId(), admin.getEmail(), "ADMIN", expirationMinutes);
+
+        log.info("Admin logged in: adminId={}, tokenTtlMinutes={}", admin.getId(), expirationMinutes);
 
         return new AdminAuthResponse(accessToken, expirationMinutes * 60L);
     }
@@ -62,11 +71,14 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         AdminsRecord admin =  requireAdminByCredentials(req.email(), req.password());
 
         if (admin.getTotpSecret() != null) {
+            log.warn("Admin TOTP already configured: adminId={}", admin.getId());
             throw new AppException(ErrorCode.ADMIN_TOTP_ALREADY_CONFIGURED);
         }
 
         String secret = secretGenerator.generate();
         dsl.update(ADMINS).set(ADMINS.TOTP_SECRET,secret).where(ADMINS.ID.eq(admin.getId())).execute();
+
+        log.info("Admin TOTP configured: adminId={}", admin.getId());
 
         return new AdminTotpSetupResponse(secret, buildOtpAuthUri(req.email(), secret));
     }
@@ -88,6 +100,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
                     .where(ADMINS.EMAIL.eq(email))
                     .fetchOne();
          if (admin == null || !passwordEncoder.matches(password, admin.getPasswordHash())) {
+             log.warn("Admin login failed: reason=bad_credentials, email={}, remoteAddr={}",
+                     LogMasks.email(email), MDC.get(RequestLoggingFilter.CLIENT_IP));
              throw new AppException(ErrorCode.ADMIN_INVALID_CREDENTIALS);
          }
 
