@@ -228,6 +228,11 @@ public enum ErrorCode {
             "INSPECTOR_BANNED",
             "Inspector is banned",
             HttpStatus.FORBIDDEN
+    ),
+    ACCESS_TOKEN_INVALID(
+            "ACCESS_TOKEN_INVALID",
+            "Invalid access token",
+            HttpStatus.NOT_FOUND
     );
 
 
