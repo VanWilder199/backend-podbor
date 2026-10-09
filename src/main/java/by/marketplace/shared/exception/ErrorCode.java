@@ -233,6 +233,11 @@ public enum ErrorCode {
             "ACCESS_TOKEN_INVALID",
             "Invalid access token",
             HttpStatus.NOT_FOUND
+    ),
+    NOTIFICATION_SEND_FAILED(
+            "NOTIFICATION_SEND_FAILED",
+            "Failed to send notification",
+            HttpStatus.INTERNAL_SERVER_ERROR
     );
 
 

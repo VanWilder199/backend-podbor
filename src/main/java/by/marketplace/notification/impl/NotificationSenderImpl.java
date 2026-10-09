@@ -1,6 +1,9 @@
 package by.marketplace.notification.impl;
 
 import by.marketplace.auth.dto.Channel;
+import by.marketplace.notification.NotificationSender;
+import by.marketplace.notification.UniSenderClient;
+import by.marketplace.notification.service.TemplateEngineImpl;
 import by.marketplace.shared.logging.LogMasks;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +13,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationSender implements by.marketplace.notification.NotificationSender {
+public class NotificationSenderImpl implements NotificationSender {
+    private final UniSenderClient uniSenderClient;
+    private final TemplateEngineImpl templateEngine;
 
     /**
      * Асинхронная отправка OTP уведомления.
@@ -34,16 +39,17 @@ public class NotificationSender implements by.marketplace.notification.Notificat
 
     @Override
     public void send(Channel channel, String destination, String code) {
-        // OTP-код и полный destination в лог не пишем никогда.
-        // Детальная строка с id/destination пишется выше, в sendOtpAsync.
-        // TODO: Интеграция с реальным SMS/Email провайдером
+       switch (channel) {
+           case SMS -> uniSenderClient.sendSms(destination, code);
+           case EMAIL -> uniSenderClient.sendEmail(destination,"Ваш OTP-код" , templateEngine.renderOtpHtml(code));
+       }
     }
 
     @Override
     public void notify(Channel channel, String destination, String message) {
-        // Текст сообщения (в будущем — со ссылкой и сырым токеном) в лог не пишем.
-        log.info("Notification queued: channel={}, destination={}, length={}",
-                channel, LogMasks.destination(destination), message.length());
-        // TODO: Интеграция с реальным SMS/Email провайдером
+        switch (channel) {
+            case SMS -> uniSenderClient.sendSms(destination, message);
+            case EMAIL -> uniSenderClient.sendEmail(destination, "Уведомление", templateEngine.renderNotificationHtml(message));
+        }
     }
 }

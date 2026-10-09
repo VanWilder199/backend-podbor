@@ -32,6 +32,11 @@ s3:
 
 unisender:
   api-key: ${UNISENDER_API_KEY:}
+  region: ${UNISENDER_REGION:ru}
+  sms-sender: ${UNISENDER_SMS_SENDER:}
+  sender-name: ${UNISENDER_SENDER_NAME:}
+  sender-email: ${UNISENDER_SENDER_EMAIL:}
+  email-list-id: ${UNISENDER_EMAIL_LIST_ID:}
 
 bepaid:
   shop-id: ${BEPAID_SHOP_ID:}
