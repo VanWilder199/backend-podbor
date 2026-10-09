@@ -69,6 +69,8 @@ dependencies {
     jooqGenerator "org.jooq:jooq-meta:${jooqVersion}"
     jooqGenerator 'org.postgresql:postgresql'
 
+    implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
+
 
     // JWT RS256
     implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"

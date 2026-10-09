@@ -1,0 +1,11 @@
+logging:
+  structured:
+    format:
+      console: ecs          # ecs / logstash / gelf — под систему сбора логов
+    ecs:
+      service:
+        name: marketplace
+        environment: prod
+  level:
+    by.marketplace: INFO
+    org.jooq.tools.LoggerListener: INFO   # никогда не DEBUG в prod (TOTP-секреты, хэши в SQL)
