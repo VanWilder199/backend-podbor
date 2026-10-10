@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/reports/view").permitAll()
                         .requestMatchers("/webhooks/**").permitAll()
+                        .requestMatchers("v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);

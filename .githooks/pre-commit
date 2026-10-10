@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# 3.4 Pre-commit: перегенерирует OpenAPI, если изменился код API.
+# Мягкий фолбэк: если бэк не запущен — предупреждает и пропускает
+# (настоящая страховка от рассинхрона — drift-проверка в CI, п. 3.3).
+set -euo pipefail
+
+changed=$(git diff --cached --name-only \
+  | grep -E 'src/main/java/.*(Controller|Dto)\.java$|OpenApiConfig\.java|build\.gradle' || true)
+[ -z "$changed" ] && exit 0
+
+BASE="http://localhost:8080/v3/api-docs"
+OUT="src/main/resources/static/openapi"
+
+if curl -sf "$BASE" >/dev/null 2>&1; then
+  mkdir -p "$OUT"
+  curl -sf "$BASE/admin"     -o "$OUT/openapi-admin.json"
+  curl -sf "$BASE/buyer"     -o "$OUT/openapi-buyer.json"
+  curl -sf "$BASE/inspector" -o "$OUT/openapi-inspector.json"
+  git add "$OUT"/*.json
+  echo "pre-commit: OpenAPI regenerated -> $OUT/openapi-{admin,buyer,inspector}.json"
+else
+  echo "WARN pre-commit: backend не запущен на $BASE — openapi.json НЕ перегенерирован."
+  echo "     Запусти бэк и закоммить заново, либо CI-проверка поймает drift."
+fi
+exit 0

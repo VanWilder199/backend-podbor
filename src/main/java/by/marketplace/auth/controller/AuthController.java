@@ -7,6 +7,7 @@ import by.marketplace.auth.dto.AuthResponse;
 import by.marketplace.auth.dto.RefreshRequest;
 import by.marketplace.auth.dto.SendOtpRequest;
 import by.marketplace.auth.dto.VerifyOtpRequest;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@SecurityRequirements
 public class AuthController {
 
     private final OtpService otpService;

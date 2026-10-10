@@ -2,6 +2,7 @@ package by.marketplace.purchase.controller;
 
 import by.marketplace.purchase.dto.ReportViewDto;
 import by.marketplace.purchase.service.ReportAccessService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ public class ReportAccessController {
     private final ReportAccessService reportAccessService;
 
     @GetMapping("/view")
+    @SecurityRequirements
     public ResponseEntity<ReportViewDto> view(@RequestParam String token) {
         return ResponseEntity.ok(reportAccessService.getReportByToken(token));
     }

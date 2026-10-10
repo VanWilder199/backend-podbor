@@ -93,6 +93,7 @@ dependencies {
     // Utilities
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.1'
 
     // Tests
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

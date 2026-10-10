@@ -5,6 +5,7 @@ import by.marketplace.auth.dto.AdminLoginRequest;
 import by.marketplace.auth.dto.AdminSetupTotpRequest;
 import by.marketplace.auth.dto.AdminTotpSetupResponse;
 import by.marketplace.auth.service.AdminAuthService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/admin/auth")
+@SecurityRequirements
 public class AdminAuthController {
     private final AdminAuthService adminAuthService;
 
