@@ -29,3 +29,6 @@ HELP.md
 
 # OS
 Thumbs.db
+
+# Frontend — отдельный репозиторий, не трогаем из бэкенда
+frontend/

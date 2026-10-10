@@ -1,0 +1,768 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MarketPlace API",
+    "description": "Auto-reports marketplace: buyers, inspectors, admins",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "TelegramData": []
+    }
+  ],
+  "paths": {
+    "/inspector/reports/{reportId}/sections/{sectionId}": {
+      "put": {
+        "tags": [
+          "report-controller"
+        ],
+        "operationId": "updateSection",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/inspector/reports/{reportId}/paint": {
+      "put": {
+        "tags": [
+          "report-controller"
+        ],
+        "operationId": "updatePaintMeasurements",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePaintMeasurementsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/inspector/reports/{reportId}/conclusion": {
+      "put": {
+        "tags": [
+          "report-controller"
+        ],
+        "operationId": "updateConclusion",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConclusionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/inspector/reports": {
+      "post": {
+        "tags": [
+          "inspector-controller"
+        ],
+        "operationId": "reports",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCarReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inspector/reports/{reportId}/submit": {
+      "post": {
+        "tags": [
+          "report-controller"
+        ],
+        "operationId": "submitForModeration",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/inspector/register": {
+      "post": {
+        "tags": [
+          "inspector-controller"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInspectorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inspector/media/presigned-url/{reportId}": {
+      "post": {
+        "tags": [
+          "media-controller"
+        ],
+        "operationId": "generatePresignedUrl",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignedUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUrlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inspector/media/confirm-upload/{reportId}": {
+      "post": {
+        "tags": [
+          "media-controller"
+        ],
+        "operationId": "confirmUpload",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/inspector/reports/{reportId}": {
+      "get": {
+        "tags": [
+          "report-controller"
+        ],
+        "operationId": "getReport",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inspector/": {
+      "get": {
+        "tags": [
+          "inspector-controller"
+        ],
+        "operationId": "inspector",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectorDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SectionItemInput": {
+        "type": "object",
+        "properties": {
+          "itemKey": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "WARN",
+              "BAD"
+            ]
+          },
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemKey",
+          "status"
+        ]
+      },
+      "UpdateSectionRequest": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionItemInput"
+            }
+          }
+        },
+        "required": [
+          "items",
+          "summary"
+        ]
+      },
+      "PaintMeasurementInput": {
+        "type": "object",
+        "properties": {
+          "panelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "spot": {
+            "type": "string"
+          },
+          "thicknessUm": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "panelId",
+          "thicknessUm"
+        ]
+      },
+      "UpdatePaintMeasurementsRequest": {
+        "type": "object",
+        "properties": {
+          "measurements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaintMeasurementInput"
+            }
+          }
+        },
+        "required": [
+          "measurements"
+        ]
+      },
+      "UpdateConclusionRequest": {
+        "type": "object",
+        "properties": {
+          "conclusionText": {
+            "type": "string"
+          },
+          "priceByn": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "conclusionText",
+          "priceByn"
+        ]
+      },
+      "RegisterCarReportRequest": {
+        "type": "object",
+        "properties": {
+          "avbyUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avbyUrl"
+        ]
+      },
+      "CreateReportResponse": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reportId"
+        ]
+      },
+      "RegisterInspectorRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fullName",
+          "phone"
+        ]
+      },
+      "InspectorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "telegramUserId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "id",
+          "phone",
+          "status",
+          "telegramUserId"
+        ]
+      },
+      "PresignedUrlRequest": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "contentType",
+          "fileName"
+        ]
+      },
+      "PresignedUrlResponse": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string"
+          },
+          "s3Key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "s3Key",
+          "uploadUrl"
+        ]
+      },
+      "ConfirmUploadRequest": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "s3key": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PHOTO",
+              "VIDEO"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "s3key"
+        ]
+      },
+      "PaintMeasurementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "panelCode": {
+            "type": "string"
+          },
+          "spot": {
+            "type": "string"
+          },
+          "thicknessUm": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "panelCode",
+          "spot",
+          "thicknessUm"
+        ]
+      },
+      "ReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inspectorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priceByn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "conclusionText": {
+            "type": "string"
+          },
+          "stopFactors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSectionDto"
+            }
+          },
+          "paintMeasurements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaintMeasurementDto"
+            }
+          },
+          "globalMedia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportMediaDto"
+            }
+          }
+        },
+        "required": [
+          "carId",
+          "globalMedia",
+          "id",
+          "inspectorId",
+          "paintMeasurements",
+          "sections",
+          "status",
+          "stopFactors",
+          "versionNo"
+        ]
+      },
+      "ReportMediaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "s3Key": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "orderNo": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "orderNo",
+          "s3Key",
+          "status"
+        ]
+      },
+      "ReportSectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sectionKey": {
+            "type": "string"
+          },
+          "orderNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionItemDto"
+            }
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportMediaDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "items",
+          "media",
+          "orderNo",
+          "sectionKey",
+          "summary"
+        ]
+      },
+      "SectionItemDto": {
+        "type": "object",
+        "properties": {
+          "itemKey": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "WARN",
+              "BAD"
+            ]
+          },
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemKey",
+          "status"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "TelegramData": {
+        "type": "apiKey",
+        "name": "X-Telegram-Data",
+        "in": "header"
+      }
+    }
+  }
+}
